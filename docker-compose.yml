@@ -1,12 +1,35 @@
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: shai
+      POSTGRES_PASSWORD: shai
+      POSTGRES_DB: shai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shai -d shai_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   fastapi_api:
     build:
       context: ./fastapi_api
     container_name: fastapi_api
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
-      DATABASE_URL: "${DATABASE_URL:-postgresql+psycopg2://shai:shai@postgres:5432/shai_db}"
+      DATABASE_URL: postgresql+psycopg2://shai:shai@postgres:5432/shai_db
+      RUNPOD_COMFY_URL: ${RUNPOD_COMFY_URL:-}
     ports:
       - "8000:8000"
     networks:
@@ -22,33 +45,17 @@ services:
     depends_on:
       - fastapi_api
     ports:
-      - "3000:80"
+      - "80:3000"
     networks:
       default:
         aliases:
           - frontend_app
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: shai_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: "shai"
-      POSTGRES_PASSWORD: "shai"
-      POSTGRES_DB: "shai_db"
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      default:
-        aliases:
-          - postgres
+volumes:
+  postgres_data:
 
 networks:
   default:
     driver: bridge
 
-volumes:
-  pgdata:
 

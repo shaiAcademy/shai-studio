@@ -10,10 +10,10 @@ export const login = async (username, password) => {
   return res.data;
 };
 
-export const generate = async ({ prompt, token }) => {
+export const generate = async ({ prompt, steps = 20, token }) => {
   const res = await axios.post(
     `${API_BASE}/generate/image`,
-    { prompt },
+    { prompt, steps },
     {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }

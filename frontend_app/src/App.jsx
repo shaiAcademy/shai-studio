@@ -65,14 +65,24 @@ export default function App() {
     setError("");
     try {
       const res = await generate({ prompt, token });
-      const newTask = {
-        ...res,
-        prompt,
-      };
-      setTasks((prev) => [newTask, ...prev]);
-      setPrompt("");
+      console.log("Generation response:", res);
+      if (res && res.image_url) {
+        const newTask = {
+          ...res,
+          prompt,
+        };
+        setTasks((prev) => [newTask, ...prev]);
+        setPrompt("");
+      } else {
+        setError("Invalid response from server. Missing image_url.");
+      }
     } catch (err) {
-      setError("Generation request failed. Check API availability.");
+      console.error("Generation error:", err);
+      setError(
+        err.response?.data?.detail || 
+        err.message || 
+        "Generation request failed. Check API availability."
+      );
     } finally {
       setLoading(false);
     }
@@ -86,12 +96,6 @@ export default function App() {
     "Studio photo of a wooden chair on marble floor",
     "Isometric illustration of a smart home dashboard",
     "Moody landscape, misty mountains at sunrise",
-  ];
-
-  const highlights = [
-    { title: "Zero external calls", body: "100% cost-controlled mock pipeline." },
-    { title: "Realtime preview", body: "Instant UI feedback with graceful fallbacks." },
-    { title: "Team-ready", body: "Clean UX for demos, handoff, and QA sessions." },
   ];
 
   return (
@@ -144,11 +148,11 @@ export default function App() {
             <Chip label="shai.academy" color="primary" size="small" />
             <Chip label="Creative Lab" variant="outlined" size="small" />
           </Box>
-          <Typography variant="h3" fontWeight={800} sx={{ letterSpacing: -0.8 }}>
-            Build visuals at the speed of thought.
+          <Typography variant="h4" fontWeight={800} sx={{ letterSpacing: -0.5 }}>
+            Craft production-grade visuals with one click.
           </Typography>
-          <Typography color="text.secondary" maxWidth="720px" sx={{ fontSize: 18 }}>
-            shai.academy studio: premium-grade UX, mock backend for zero-cost demos, and instant previews for your product reviews.
+          <Typography color="text.secondary" maxWidth="720px">
+            Describe the scene, hit Generate, and get a ready-to-ship image. Built for product teams and rapid prototyping.
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <Button
@@ -182,30 +186,6 @@ export default function App() {
         </Paper>
 
         <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Grid container spacing={2}>
-              {highlights.map((h) => (
-                <Grid item xs={12} md={4} key={h.title}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2.5,
-                      borderRadius: 3,
-                      border: "1px solid #e2e8f0",
-                      background:
-                        "linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,252,0.8))",
-                    }}
-                  >
-                    <Typography fontWeight={700}>{h.title}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      {h.body}
-                    </Typography>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          </Grid>
-
           <Grid item xs={12} md={6}>
             {tab === 0 ? (
               <Paper
@@ -273,6 +253,9 @@ export default function App() {
                     </Box>
                     <Chip label="Image" color="primary" variant="outlined" />
                   </Box>
+                  {error && (
+                    <Alert severity="error">{error}</Alert>
+                  )}
                   <TextField
                     label="Prompt"
                     multiline
