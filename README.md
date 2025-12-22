@@ -1,4 +1,4 @@
-# shai.academy - Generative Image Platform
+# shai.studio - Generative Image Platform
 
 Контейнеризованная платформа для генерации изображений с FastAPI, React и PostgreSQL.
 
