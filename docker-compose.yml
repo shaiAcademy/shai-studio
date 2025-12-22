@@ -29,9 +29,26 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg2://shai:shai@postgres:5432/shai_db
-      RUNPOD_COMFY_URL: ${RUNPOD_COMFY_URL:-}
+
+      # RunPod Serverless
+      RUNPOD_API_KEY: ${RUNPOD_API_KEY}
+      RUNPOD_ENDPOINT_ID: ${RUNPOD_ENDPOINT_ID}
+
+      # RunPod S3-compatible API (Network Volume)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      RUNPOD_S3_REGION: ${RUNPOD_S3_REGION}
+      RUNPOD_S3_ENDPOINT_URL: ${RUNPOD_S3_ENDPOINT_URL}
+      RUNPOD_VOLUME_ID: ${RUNPOD_VOLUME_ID}
+      PRESIGN_EXPIRES_SEC: ${PRESIGN_EXPIRES_SEC:-86400}
+
+      JWT_SECRET: ${JWT_SECRET:-change-me-please}
+      JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN:-43200}
     ports:
       - "8000:8000"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     networks:
       default:
         aliases:
@@ -45,8 +62,7 @@ services:
     depends_on:
       - fastapi_api
     ports:
-      - "80:80"      # прод/стандартный HTTP
-      - "3000:80"    # удобство для локальной проверки
+      - "3000:80"
     networks:
       default:
         aliases:
@@ -58,5 +74,3 @@ volumes:
 networks:
   default:
     driver: bridge
-
-
