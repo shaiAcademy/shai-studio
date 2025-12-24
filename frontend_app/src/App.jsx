@@ -28,13 +28,13 @@ const translations = {
         guest: "Guest",
         logout: "Logout",
         launchStudio: "Launch Studio",
-        
+
         // Hero
         heroTitle: "Craft production-grade visuals with AI",
-        heroDescription: "Describe your vision and let AI generate stunning images or videos in seconds. Powered by RunPod serverless GPU infrastructure with on-demand scaling, ComfyUI diffusion workflows, and intelligent polling for real-time progress tracking.",
+        heroDescription: "Describe your vision and let AI generate stunning images or videos in seconds.",
         startGenerating: "Start generating",
         authenticate: "Authenticate",
-        
+
         // Auth
         signIn: "Sign in",
         register: "Register",
@@ -49,7 +49,15 @@ const translations = {
         authRequired: "Email, Name and Password are required.",
         loginRequired: "Email and Password are required.",
         authFailed: "Auth failed",
-        
+
+        // Flow Registration
+        step1Title: "Enter your email",
+        step2Title: "What's your name?",
+        step3Title: "Create a password",
+        next: "Next",
+        back: "Back",
+        createAccount: "Create Account",
+
         // Studio
         promptYourVision: "Prompt your vision",
         videoNote: "Video may return .webp (animated) — it will still render correctly.",
@@ -62,24 +70,24 @@ const translations = {
         generating: "Generating...",
         promptRequired: "Prompt is required.",
         signInFirst: "Please sign in first.",
-        
+
         // Preview
         livePreview: "Live preview",
         latestMedia: "Latest generated media",
         generateFirst: "Generate your first media to see it here",
         taskId: "Task ID",
         status: "Status",
-        
+
         // History
         historyTitle: "History & Results",
         items: "items",
         item: "item",
         noTasks: "No tasks yet. Generate your first image/video.",
         download: "Download",
-        
+
         // Footer
         footerText: "Crafted for product teams",
-        
+
         // Quick prompts
         quickPrompts: [
             "Cinematic portrait of an astronaut in neon city",
@@ -94,13 +102,13 @@ const translations = {
         guest: "Гость",
         logout: "Выйти",
         launchStudio: "Открыть студию",
-        
+
         // Hero
         heroTitle: "Создавайте визуальный контент с помощью ИИ",
-        heroDescription: "Опишите свою идею и позвольте ИИ создать потрясающие изображения или видео за секунды. Работает на серверной GPU-инфраструктуре RunPod с автомасштабированием, ComfyUI диффузионными воркфлоу и интеллектуальным отслеживанием прогресса в реальном времени.",
+        heroDescription: "Опишите свою идею и позвольте ИИ создать потрясающие изображения или видео за секунды.",
         startGenerating: "Начать генерацию",
         authenticate: "Авторизация",
-        
+
         // Auth
         signIn: "Вход",
         register: "Регистрация",
@@ -115,7 +123,15 @@ const translations = {
         authRequired: "Требуются Email, Имя и Пароль.",
         loginRequired: "Требуются Email и Пароль.",
         authFailed: "Ошибка авторизации",
-        
+
+        // Flow Registration
+        step1Title: "Введите ваш email",
+        step2Title: "Как вас зовут?",
+        step3Title: "Придумайте пароль",
+        next: "Далее",
+        back: "Назад",
+        createAccount: "Создать аккаунт",
+
         // Studio
         promptYourVision: "Опишите вашу идею",
         videoNote: "Видео может вернуться в формате .webp (анимация) — оно отобразится корректно.",
@@ -128,24 +144,24 @@ const translations = {
         generating: "Генерация...",
         promptRequired: "Требуется промпт.",
         signInFirst: "Сначала войдите в систему.",
-        
+
         // Preview
         livePreview: "Предпросмотр",
         latestMedia: "Последний сгенерированный контент",
         generateFirst: "Сгенерируйте первый контент, чтобы увидеть его здесь",
         taskId: "ID задачи",
         status: "Статус",
-        
+
         // History
         historyTitle: "История и результаты",
         items: "элементов",
         item: "элемент",
         noTasks: "Пока нет задач. Сгенерируйте первое изображение/видео.",
         download: "Скачать",
-        
+
         // Footer
         footerText: "Создано для продуктовых команд",
-        
+
         // Quick prompts
         quickPrompts: [
             "Кинематографичный портрет астронавта в неоновом городе",
@@ -160,13 +176,13 @@ const translations = {
         guest: "Қонақ",
         logout: "Шығу",
         launchStudio: "Студияны ашу",
-        
+
         // Hero
         heroTitle: "AI көмегімен визуалды контент жасаңыз",
-        heroDescription: "Өз идеяңызды сипаттап, AI-ға бірнеше секундта керемет суреттер немесе бейнелер жасатыңыз. RunPod серверсіз GPU инфрақұрылымымен, ComfyUI диффузиялық жұмыс процестерімен және нақты уақыттағы прогресті бақылаумен жұмыс істейді.",
+        heroDescription: "Өз идеяңызды сипаттап, AI-ға бірнеше секундта керемет суреттер немесе бейнелер жасатыңыз.",
         startGenerating: "Генерацияны бастау",
         authenticate: "Авторизация",
-        
+
         // Auth
         signIn: "Кіру",
         register: "Тіркелу",
@@ -181,7 +197,15 @@ const translations = {
         authRequired: "Email, Аты және Құпия сөз қажет.",
         loginRequired: "Email және Құпия сөз қажет.",
         authFailed: "Авторизация қатесі",
-        
+
+        // Flow Registration
+        step1Title: "Email енгізіңіз",
+        step2Title: "Атыңыз қандай?",
+        step3Title: "Құпия сөз жасаңыз",
+        next: "Келесі",
+        back: "Артқа",
+        createAccount: "Аккаунт жасау",
+
         // Studio
         promptYourVision: "Идеяңызды сипаттаңыз",
         videoNote: "Бейне .webp (анимация) форматында қайтарылуы мүмкін — ол дұрыс көрсетіледі.",
@@ -194,24 +218,24 @@ const translations = {
         generating: "Генерация...",
         promptRequired: "Промпт қажет.",
         signInFirst: "Алдымен жүйеге кіріңіз.",
-        
+
         // Preview
         livePreview: "Алдын ала қарау",
         latestMedia: "Соңғы жасалған контент",
         generateFirst: "Мұнда көру үшін алғашқы контентті жасаңыз",
         taskId: "Тапсырма ID",
         status: "Күй",
-        
+
         // History
         historyTitle: "Тарих және нәтижелер",
         items: "элементтер",
         item: "элемент",
         noTasks: "Әзірге тапсырмалар жоқ. Алғашқы сурет/бейнені жасаңыз.",
         download: "Жүктеу",
-        
+
         // Footer
         footerText: "Өнім топтары үшін жасалған",
-        
+
         // Quick prompts
         quickPrompts: [
             "Неон қаласындағы ғарышкердің кинематографиялық портреті",
@@ -254,11 +278,11 @@ async function downloadFile(url, filename) {
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error("Download failed");
-        
+
         const blob = await response.blob();
         const ext = getExt(url) || "bin";
         const finalFilename = filename.includes(".") ? filename : `${filename}.${ext}`;
-        
+
         const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = blobUrl;
@@ -347,69 +371,70 @@ async function apiJobStatus({ taskId, token }) {
 ========================= */
 const IconRocket = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
-        <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
-        <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
-        <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+        <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+        <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+        <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+        <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
     </svg>
 );
 
 const IconLogin = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-        <polyline points="10 17 15 12 10 7"/>
-        <line x1="15" y1="12" x2="3" y2="12"/>
+        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+        <polyline points="10 17 15 12 10 7" />
+        <line x1="15" y1="12" x2="3" y2="12" />
     </svg>
 );
 
 const IconUpload = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/>
-        <line x1="12" y1="3" x2="12" y2="15"/>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
     </svg>
 );
 
 const IconDownload = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="7 10 12 15 17 10"/>
-        <line x1="12" y1="15" x2="12" y2="3"/>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
 );
 
 const IconImage = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
     </svg>
 );
 
 const IconLogout = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-        <polyline points="16 17 21 12 16 7"/>
-        <line x1="21" y1="12" x2="9" y2="12"/>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
 );
 
 const IconGlobe = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="2" y1="12" x2="22" y2="12"/>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
     </svg>
 );
 
 export default function App() {
     const [lang, setLang] = useState(() => localStorage.getItem("shai_lang") || "en");
     const t = translations[lang];
-    
+
     const [token, setToken] = useState("");
     const [tab, setTab] = useState(0);
 
     const [authMode, setAuthMode] = useState("login");
+    const [regStep, setRegStep] = useState(1);
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
     const [password, setPassword] = useState("");
@@ -422,7 +447,7 @@ export default function App() {
     const [error, setError] = useState("");
 
     const [tasks, setTasks] = useState([]);
-    
+
     const [langMenuOpen, setLangMenuOpen] = useState(false);
 
     useEffect(() => {
@@ -434,7 +459,11 @@ export default function App() {
         if (token) localStorage.setItem("gen_token", token);
         else localStorage.removeItem("gen_token");
     }, [token]);
-    
+
+    useEffect(() => {
+        setRegStep(1);
+    }, [authMode]);
+
     useEffect(() => {
         localStorage.setItem("shai_lang", lang);
     }, [lang]);
@@ -462,7 +491,11 @@ export default function App() {
             setToken(res.access_token);
             setTab(1);
         } catch (err) {
-            setError(err?.response?.data?.detail || err?.message || t.authFailed);
+            let msg = err?.response?.data?.detail || err?.message || t.authFailed;
+            if (typeof msg !== 'string') {
+                msg = JSON.stringify(msg);
+            }
+            setError(msg);
         }
     };
 
@@ -543,7 +576,7 @@ export default function App() {
             setLoading(false);
         }
     };
-    
+
     const langLabels = { en: "EN", ru: "RU", kz: "KZ" };
 
     return (
@@ -557,11 +590,11 @@ export default function App() {
                     <div className="header-logo">
                         <span className="header-logo-text">shai.<span>academy</span></span>
                     </div>
-                    
+
                     <div className="header-actions">
                         {/* Language Switcher */}
                         <div className="lang-switcher">
-                            <button 
+                            <button
                                 className="lang-switcher-btn"
                                 onClick={() => setLangMenuOpen(!langMenuOpen)}
                             >
@@ -584,19 +617,19 @@ export default function App() {
                                 </div>
                             )}
                         </div>
-                        
+
                         <span className={`tag ${isAuthed ? 'tag-success' : 'tag-default'}`}>
                             {isAuthed ? t.signedIn : t.guest}
                         </span>
-                        
+
                         {isAuthed && (
                             <button className="btn btn-outline btn-sm" onClick={handleLogout}>
                                 <IconLogout /> {t.logout}
                             </button>
                         )}
-                        
-                        <button 
-                            className="btn btn-primary" 
+
+                        <button
+                            className="btn btn-primary"
                             onClick={() => setTab(1)}
                             disabled={!isAuthed}
                         >
@@ -614,28 +647,28 @@ export default function App() {
                                 <span className="tag tag-accent">SHAI.ACADEMY</span>
                                 <span className="tag tag-accent">CREATIVE STUDIO</span>
                             </div>
-                            
+
                             <h1>{t.heroTitle}</h1>
-                            
+
                             <p>{t.heroDescription}</p>
-                            
+
                             <div className="hero-actions">
-                                <button 
-                                    className="btn btn-white btn-lg" 
+                                <button
+                                    className="btn btn-white btn-lg"
                                     onClick={() => setTab(1)}
                                     disabled={!isAuthed}
                                 >
                                     <IconRocket /> {t.startGenerating}
                                 </button>
-                                <button 
-                                    className="btn btn-outline btn-lg" 
-                                    style={{borderColor: 'rgba(255,255,255,0.3)', color: '#fff'}} 
+                                <button
+                                    className="btn btn-outline btn-lg"
+                                    style={{ borderColor: 'rgba(255,255,255,0.3)', color: '#fff' }}
                                     onClick={() => setTab(0)}
                                 >
                                     {t.authenticate}
                                 </button>
                             </div>
-                            
+
                             <div className="quick-prompts">
                                 {t.quickPrompts.map((qp) => (
                                     <span
@@ -661,64 +694,139 @@ export default function App() {
                                 /* AUTH PANEL */
                                 <div className="auth-panel">
                                     <h3 className="panel-title">{authMode === "login" ? t.signIn : t.register}</h3>
-                                    
+
                                     <div className="auth-switcher">
-                                        <span 
+                                        <span
                                             className={`tag ${authMode === 'login' ? 'tag-success' : 'tag-default'}`}
                                             onClick={() => setAuthMode("login")}
-                                            style={{cursor: 'pointer'}}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             {t.login}
                                         </span>
-                                        <span 
+                                        <span
                                             className={`tag ${authMode === 'register' ? 'tag-success' : 'tag-default'}`}
                                             onClick={() => setAuthMode("register")}
-                                            style={{cursor: 'pointer'}}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             {t.register}
                                         </span>
                                     </div>
 
                                     {error && <div className="alert alert-error">{error}</div>}
-                                    
-                                    <div className="form-group">
-                                        <label className="form-label">{t.email}</label>
-                                        <input
-                                            type="email"
-                                            className="form-input"
-                                            placeholder={t.emailPlaceholder}
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </div>
-                                    
-                                    {authMode === "register" && (
-                                        <div className="form-group">
-                                            <label className="form-label">{t.name}</label>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                placeholder={t.namePlaceholder}
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                            />
+
+                                    {authMode === "login" ? (
+                                        <>
+                                            <div className="form-group">
+                                                <label className="form-label">{t.email}</label>
+                                                <input
+                                                    type="email"
+                                                    className="form-input"
+                                                    placeholder={t.emailPlaceholder}
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label className="form-label">{t.password}</label>
+                                                <input
+                                                    type="password"
+                                                    className="form-input"
+                                                    placeholder={t.passwordPlaceholder}
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <button className="btn btn-accent btn-lg" onClick={handleAuth} style={{ width: '100%', marginTop: '8px' }}>
+                                                <IconLogin /> {t.signIn}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="reg-flow">
+                                            <div className="reg-progress">
+                                                <div className={`reg-progress-bar step-${regStep}`} />
+                                            </div>
+
+                                            {regStep === 1 && (
+                                                <div className="reg-step-content">
+                                                    <h4 className="reg-step-title">{t.step1Title}</h4>
+                                                    <div className="form-group">
+                                                        <input
+                                                            type="email"
+                                                            className="form-input"
+                                                            placeholder={t.emailPlaceholder}
+                                                            value={email}
+                                                            onChange={(e) => setEmail(e.target.value)}
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        className="btn btn-accent btn-lg"
+                                                        disabled={!email.includes('@')}
+                                                        onClick={() => setRegStep(2)}
+                                                        style={{ width: '100%' }}
+                                                    >
+                                                        {t.next}
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {regStep === 2 && (
+                                                <div className="reg-step-content">
+                                                    <h4 className="reg-step-title">{t.step2Title}</h4>
+                                                    <div className="form-group">
+                                                        <input
+                                                            type="text"
+                                                            className="form-input"
+                                                            placeholder={t.namePlaceholder}
+                                                            value={name}
+                                                            onChange={(e) => setName(e.target.value)}
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                    <div className="reg-step-actions">
+                                                        <button className="btn btn-outline" onClick={() => setRegStep(1)}>{t.back}</button>
+                                                        <button
+                                                            className="btn btn-accent"
+                                                            disabled={name.length < 2}
+                                                            onClick={() => setRegStep(3)}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            {t.next}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {regStep === 3 && (
+                                                <div className="reg-step-content">
+                                                    <h4 className="reg-step-title">{t.step3Title}</h4>
+                                                    <div className="form-group">
+                                                        <input
+                                                            type="password"
+                                                            className="form-input"
+                                                            placeholder={t.passwordPlaceholder}
+                                                            value={password}
+                                                            onChange={(e) => setPassword(e.target.value)}
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                    <div className="reg-step-actions">
+                                                        <button className="btn btn-outline" onClick={() => setRegStep(2)}>{t.back}</button>
+                                                        <button
+                                                            className="btn btn-accent"
+                                                            disabled={password.length < 6}
+                                                            onClick={handleAuth}
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            {t.createAccount}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-                                    
-                                    <div className="form-group">
-                                        <label className="form-label">{t.password}</label>
-                                        <input
-                                            type="password"
-                                            className="form-input"
-                                            placeholder={t.passwordPlaceholder}
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                        />
-                                    </div>
-                                    
-                                    <button className="btn btn-accent btn-lg" onClick={handleAuth} style={{width: '100%', marginTop: '8px'}}>
-                                        <IconLogin /> {authMode === "login" ? t.signIn : t.register}
-                                    </button>
 
                                     {isAuthed && <div className="alert alert-success">{t.youAreSignedIn}</div>}
                                 </div>
@@ -730,15 +838,15 @@ export default function App() {
                                             <h3 className="panel-title">{t.promptYourVision}</h3>
                                             <p className="panel-subtitle">{t.videoNote}</p>
                                         </div>
-                                        
+
                                         <div className="type-switcher">
-                                            <span 
+                                            <span
                                                 className={`tag ${genType === 'image' ? 'active' : 'tag-default'}`}
                                                 onClick={() => setGenType("image")}
                                             >
                                                 {t.image}
                                             </span>
-                                            <span 
+                                            <span
                                                 className={`tag ${genType === 'video' ? 'active' : 'tag-default'}`}
                                                 onClick={() => setGenType("video")}
                                             >
@@ -748,7 +856,7 @@ export default function App() {
                                     </div>
 
                                     {error && <div className="alert alert-error">{error}</div>}
-                                    
+
                                     <div className="form-group">
                                         <label className="form-label">{t.prompt}</label>
                                         <textarea
@@ -759,7 +867,7 @@ export default function App() {
                                             rows={6}
                                         />
                                     </div>
-                                    
+
                                     <div className="form-group">
                                         <label className="form-label">{t.steps}</label>
                                         <input
@@ -771,12 +879,12 @@ export default function App() {
                                             max={200}
                                         />
                                     </div>
-                                    
-                                    <button 
-                                        className="btn btn-accent btn-lg" 
+
+                                    <button
+                                        className="btn btn-accent btn-lg"
                                         onClick={handleGenerate}
                                         disabled={!canGenerate}
-                                        style={{width: '100%', marginTop: '8px'}}
+                                        style={{ width: '100%', marginTop: '8px' }}
                                     >
                                         <IconUpload /> {loading ? t.generating : t.generate}
                                     </button>
@@ -823,7 +931,7 @@ export default function App() {
                                     </div>
                                     <div className="preview-info-row">
                                         <span className="preview-info-label">{t.status}</span>
-                                        <span className={`tag ${latest.status === 'COMPLETED' ? 'tag-success' : 'tag-default'}`} style={{padding: '4px 8px', fontSize: '12px'}}>
+                                        <span className={`tag ${latest.status === 'COMPLETED' ? 'tag-success' : 'tag-default'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>
                                             {latest.status}
                                         </span>
                                     </div>
@@ -850,27 +958,27 @@ export default function App() {
                                         {task.url ? (
                                             <RenderMedia key={task.url} url={task.url} height={180} controls={false} />
                                         ) : (
-                                            <div className="skeleton" style={{width: '100%', height: '100%'}} />
+                                            <div className="skeleton" style={{ width: '100%', height: '100%' }} />
                                         )}
                                     </div>
-                                    
+
                                     <div className="history-card-content">
                                         <div className="history-card-tags">
-                                            <span className="tag tag-success" style={{padding: '4px 10px', fontSize: '11px'}}>
+                                            <span className="tag tag-success" style={{ padding: '4px 10px', fontSize: '11px' }}>
                                                 {task.type === "video" ? t.video : t.image}
                                             </span>
-                                            <span className={`tag ${task.status === 'COMPLETED' ? 'tag-success' : 'tag-default'}`} style={{padding: '4px 10px', fontSize: '11px'}}>
+                                            <span className={`tag ${task.status === 'COMPLETED' ? 'tag-success' : 'tag-default'}`} style={{ padding: '4px 10px', fontSize: '11px' }}>
                                                 {task.status}
                                             </span>
                                         </div>
-                                        
+
                                         <p className="history-card-prompt" title={task.prompt}>{task.prompt}</p>
-                                        
+
                                         <div className="history-card-meta">
                                             <span className="history-card-id">{task.task_id.slice(0, 16)}...</span>
-                                            
+
                                             {task.url && (
-                                                <button 
+                                                <button
                                                     onClick={() => downloadFile(task.url, `${task.type}-${task.task_id}`)}
                                                     className="btn btn-accent btn-sm"
                                                 >

@@ -3,6 +3,9 @@ import mimetypes
 from typing import Optional, Tuple
 from datetime import datetime, timedelta
 
+import firebase_admin
+from firebase_admin import credentials, auth
+
 import requests
 import boto3
 from botocore.client import Config
@@ -23,6 +26,31 @@ from fastapi.security import OAuth2PasswordBearer
 # App + CORS
 # ----------------------------
 app = FastAPI(title="RunPod Gateway API", version="1.0.0")
+
+# ----------------------------
+# Firebase Initialization
+# ----------------------------
+FIREBASE_KEY_PATH = os.path.join(os.path.dirname(__file__), "firebase_key.json")
+
+try:
+    if os.path.exists(FIREBASE_KEY_PATH):
+        cred = credentials.Certificate(FIREBASE_KEY_PATH)
+        firebase_admin.initialize_app(cred)
+        print(f"✅ Firebase Admin initialized successfully using {FIREBASE_KEY_PATH}")
+        
+        # Verify connection by attempting to list users
+        try:
+            auth.list_users(max_results=1)
+            print("✅ Firebase Connection Verified: Successfully connected to Auth service.")
+        except Exception as e:
+            print(f"⚠️ Firebase initialized but failed to verify Auth connection: {e}")
+    else:
+        print(f"❌ WARNING: Firebase key not found at {FIREBASE_KEY_PATH}")
+except ValueError:
+    # App already initialized
+    print("ℹ️ Firebase app already initialized.")
+except Exception as e:
+    print(f"❌ Failed to initialize Firebase: {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -236,10 +264,29 @@ def health():
 # ----------------------------
 @app.post("/api/auth/register", response_model=AuthResponse, status_code=201)
 def register(payload: UserCreate, db=Depends(get_db)):
+    # 1. Check local DB
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    # 2. Create user in Firebase
+    try:
+        auth.create_user(
+            email=payload.email,
+            password=payload.password,
+            display_name=payload.name,
+        )
+        print(f"✅ Created user {payload.email} in Firebase.")
+    except auth.EmailAlreadyExistsError:
+        # If exists in Firebase but not local, we proceed (or could fail).
+        # For now, let's treat it as "ok, proceed to local sync" or fail.
+        # User said "vnedreno" (integrated), so let's be strict but robust.
+        print(f"⚠️ User {payload.email} already exists in Firebase. Proceeding to local DB.")
+    except Exception as e:
+        print(f"❌ Failed to create user in Firebase: {e}")
+        raise HTTPException(status_code=400, detail=f"Firebase Registration Failed: {e}")
+
+    # 3. Create user in Local DB
     user = User(
         email=payload.email,
         name=payload.name,
@@ -255,9 +302,21 @@ def register(payload: UserCreate, db=Depends(get_db)):
 
 @app.post("/api/auth/login", response_model=AuthResponse)
 def login(payload: UserLogin, db=Depends(get_db)):
+    # 1. Verify user exists in Firebase
+    try:
+        firebase_user = auth.get_user_by_email(payload.email)
+        print(f"✅ Found Firebase user: {firebase_user.uid}")
+    except auth.UserNotFoundError:
+        print(f"❌ User {payload.email} not found in Firebase.")
+        raise HTTPException(status_code=401, detail="Account not found in Firebase system.")
+    except Exception as e:
+        print(f"❌ Firebase check error: {e}")
+        raise HTTPException(status_code=500, detail="Firebase Connectivity Error")
+
+    # 2. Check local DB and Password
     user = db.query(User).filter(User.email == payload.email).first()
     if not user or not verify_password(payload.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid credentials (local check)")
 
     token = create_access_token(str(user.id))
     return AuthResponse(access_token=token)

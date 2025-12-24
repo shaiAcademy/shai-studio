@@ -991,3 +991,58 @@ h1, h2, h3, h4, h5, h6 {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ============ REGISTRATION FLOW ============ */
+
+.reg-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.reg-step-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--color-primary);
+}
+
+.reg-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--color-bg-light);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.reg-progress-bar {
+  height: 100%;
+  background: var(--gradient-accent);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reg-progress-bar.step-1 { width: 33%; }
+.reg-progress-bar.step-2 { width: 66%; }
+.reg-progress-bar.step-3 { width: 100%; }
+
+.reg-step-content {
+  animation: slide-in 0.3s ease-out;
+}
+
+.reg-step-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

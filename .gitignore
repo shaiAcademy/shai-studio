@@ -15,3 +15,6 @@ venv/
 *.key
 *.token
 *.pem
+
+# Firebase
+firebase_key.json

@@ -15,7 +15,7 @@ services:
         aliases:
           - postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U shai -d shai_db"]
+      test: [ "CMD-SHELL", "pg_isready -U shai -d shai_db" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -44,6 +44,8 @@ services:
 
       JWT_SECRET: ${JWT_SECRET:-change-me-please}
       JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN:-43200}
+    volumes:
+      - ./fastapi_api:/app
     ports:
       - "8000:8000"
     dns:
@@ -70,6 +72,7 @@ services:
 
 volumes:
   postgres_data:
+
 
 networks:
   default:

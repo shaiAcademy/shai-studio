@@ -10,3 +10,4 @@ bcrypt==3.2.2
 pydantic
 email-validator
 psycopg2-binary
+firebase-admin
