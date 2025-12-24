@@ -207,7 +207,9 @@ def require_env():
     if not RUNPOD_VOLUME_ID:
         miss.append("RUNPOD_VOLUME_ID")
     if miss:
-        raise RuntimeError("Missing env vars: " + ", ".join(miss))
+        error_msg = "Missing env vars: " + ", ".join(miss)
+        print(f"❌ {error_msg}")
+        raise HTTPException(status_code=500, detail=error_msg)
 
 
 def s3_client():
@@ -309,9 +311,12 @@ def login(payload: UserLogin, db=Depends(get_db)):
     except auth.UserNotFoundError:
         print(f"❌ User {payload.email} not found in Firebase.")
         raise HTTPException(status_code=401, detail="Account not found in Firebase system.")
+    except ValueError as e:
+        print(f"❌ Firebase Auth not initialized: {e}")
+        raise HTTPException(status_code=500, detail="Firebase Configuration Error: Service not initialized on server.")
     except Exception as e:
         print(f"❌ Firebase check error: {e}")
-        raise HTTPException(status_code=500, detail="Firebase Connectivity Error")
+        raise HTTPException(status_code=500, detail=f"Firebase Connectivity Error: {str(e)}")
 
     # 2. Check local DB and Password
     user = db.query(User).filter(User.email == payload.email).first()
