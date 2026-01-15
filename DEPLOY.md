@@ -18,7 +18,7 @@ git remote -v
 git remote set-url origin https://github.com/shaiAcademy/shai-studio.git
 
 # Verify it changed
-git remote -v
+
 ```
 
 ## 3. Pull Latest Changes

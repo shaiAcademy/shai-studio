@@ -274,27 +274,33 @@ function inferMediaTypeByUrl(url) {
 /* =========================
    Download helper (cross-origin safe)
 ========================= */
-async function downloadFile(url, filename) {
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Download failed");
+/* =========================
+   Download helper
+========================= */
+function downloadFile(url, filename, type) {
+    if (!url) return;
 
-        const blob = await response.blob();
-        const ext = getExt(url) || "bin";
-        const finalFilename = filename.includes(".") ? filename : `${filename}.${ext}`;
-
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = finalFilename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-        console.error("Download error:", err);
-        window.open(url, "_blank");
+    // Extract key from URL
+    // URL format: /api/media/path/to/file or full URL
+    let key = url;
+    if (url.includes("/api/media/")) {
+        key = url.split("/api/media/")[1];
     }
+
+    let downloadUrl = `${API_BASE}/media/download/${key}`;
+
+    // Request MP4 conversion for videos
+    if (type === "video") {
+        downloadUrl += "?format=mp4";
+    }
+
+    // Trigger download via new window/iframe or anchor
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", filename); // Hint, though Content-Disposition rules
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 function RenderMedia({ url, height = 360, controls = true }) {
@@ -304,7 +310,7 @@ function RenderMedia({ url, height = 360, controls = true }) {
     if (type === "video") {
         return (
             <video
-                src={url}
+                src={`${url}#t=0.01`}
                 controls={controls}
                 playsInline
                 preload="metadata"
@@ -313,7 +319,6 @@ function RenderMedia({ url, height = 360, controls = true }) {
                     borderRadius: "16px",
                     height,
                     objectFit: "contain",
-                    backgroundColor: "#000",
                     display: "block",
                 }}
             />
@@ -361,6 +366,13 @@ async function apiStartJob({ kind, prompt, steps, token }) {
 
 async function apiJobStatus({ taskId, token }) {
     const res = await axios.get(`${API_BASE}/generate/status/${taskId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return res.data;
+}
+
+async function apiGetTasks(token) {
+    const res = await axios.get(`${API_BASE}/tasks`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data;
@@ -431,7 +443,7 @@ export default function App() {
     const t = translations[lang];
 
     const [token, setToken] = useState("");
-    const [tab, setTab] = useState(0);
+    const [tab, setTab] = useState(() => localStorage.getItem("gen_token") ? 1 : 0);
 
     const [authMode, setAuthMode] = useState("login");
     const [regStep, setRegStep] = useState(1);
@@ -452,8 +464,29 @@ export default function App() {
 
     useEffect(() => {
         const saved = localStorage.getItem("gen_token");
-        if (saved) setToken(saved);
+        if (saved) {
+            setToken(saved);
+            fetchTasks(saved);
+        }
     }, []);
+
+    const fetchTasks = async (t) => {
+        try {
+            const data = await apiGetTasks(t);
+            // Map backend TaskResponse to frontend structure
+            const mapped = data.map(d => ({
+                task_id: d.task_id,
+                prompt: d.prompt,
+                type: d.kind,
+                status: d.status,
+                url: d.media_url || "",
+                created_at: d.created_at
+            }));
+            setTasks(mapped);
+        } catch (err) {
+            console.error("Failed to load tasks", err);
+        }
+    };
 
     useEffect(() => {
         if (token) localStorage.setItem("gen_token", token);
@@ -489,6 +522,12 @@ export default function App() {
 
             if (!res?.access_token) return setError(t.authFailed + ": no access_token returned.");
             setToken(res.access_token);
+
+            // Set SSO cookie for .shai.academy
+            const userEmail = email; // captured from state
+            document.cookie = `shai_user_email=${userEmail}; domain=.shai.academy; path=/; Max-Age=86400; Secure`;
+
+            fetchTasks(res.access_token);
             setTab(1);
         } catch (err) {
             let msg = err?.response?.data?.detail || err?.message || t.authFailed;
@@ -979,7 +1018,7 @@ export default function App() {
 
                                             {task.url && (
                                                 <button
-                                                    onClick={() => downloadFile(task.url, `${task.type}-${task.task_id}`)}
+                                                    onClick={() => downloadFile(task.url, `${task.type}-${task.task_id}`, task.type)}
                                                     className="btn btn-accent btn-sm"
                                                 >
                                                     <IconDownload /> {t.download}

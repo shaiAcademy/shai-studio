@@ -11,12 +11,15 @@ import boto3
 from botocore.client import Config
 
 from fastapi import FastAPI, HTTPException, Request, Depends, status
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import subprocess
+import tempfile
+import shutil
 
 from pydantic import BaseModel, Field, EmailStr
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, desc
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -109,6 +112,23 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    tasks = relationship("Task", back_populates="owner")
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    task_id = Column(String, unique=True, index=True, nullable=False)
+    prompt = Column(Text, nullable=False)
+    kind = Column(String, nullable=False)  # image|video
+    status = Column(String, default="IN_QUEUE")
+    media_url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    owner = relationship("User", back_populates="tasks")
+
 
 def init_db():
     Base.metadata.create_all(bind=engine)
@@ -148,7 +168,21 @@ class MeResponse(BaseModel):
     id: int
     email: EmailStr
     name: str
+    name: str
     created_at: datetime
+
+
+class TaskResponse(BaseModel):
+    id: int
+    task_id: str
+    prompt: str
+    kind: str
+    status: str
+    media_url: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 
 # ----------------------------
@@ -341,7 +375,7 @@ def me(current_user: User = Depends(get_current_user)):
 # Protected endpoints (RunPod)
 # ----------------------------
 @app.post("/api/generate/{kind}")
-def generate(kind: str, payload: dict, current_user: User = Depends(get_current_user)):
+def generate(kind: str, payload: dict, current_user: User = Depends(get_current_user), db=Depends(get_db)):
     """
     kind: image|video
     payload: {prompt, steps, seed?}
@@ -379,12 +413,26 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
         raise HTTPException(502, f"RunPod /run failed: {r.status_code} {r.text}")
 
     data = r.json()
+    
+    # Save to local DB
+    task_id = data.get("id")
+    if task_id:
+        new_task = Task(
+            user_id=current_user.id,
+            task_id=task_id,
+            prompt=prompt,
+            kind=kind,
+            status=data.get("status", "IN_QUEUE")
+        )
+        db.add(new_task)
+        db.commit()
+    
     data["user"] = {"id": current_user.id, "email": current_user.email}
     return data
 
 
 @app.get("/api/generate/status/{task_id}")
-def generate_status(task_id: str, current_user: User = Depends(get_current_user)):
+def generate_status(task_id: str, current_user: User = Depends(get_current_user), db=Depends(get_db)):
     require_env()
 
     headers = {"Authorization": f"Bearer {RUNPOD_API_KEY}"}
@@ -404,15 +452,111 @@ def generate_status(task_id: str, current_user: User = Depends(get_current_user)
             media_key = f"ComfyUI/output/{out['filename']}"
 
         if media_key:
+            media_url = f"/api/media/{media_key}"
             data.setdefault("output", {})
-            data["output"]["media_url"] = f"/api/media/{media_key}"
+            data["output"]["media_url"] = media_url
+            
+            # Update DB if needed
+            task_record = db.query(Task).filter(Task.task_id == task_id).first()
+            if task_record:
+                if task_record.status != "COMPLETED":
+                    task_record.status = "COMPLETED"
+                    task_record.media_url = media_url
+                    db.commit()
+    
+    # Sync status if not completed but changed
+    else:
+         task_record = db.query(Task).filter(Task.task_id == task_id).first()
+         if task_record:
+             runpod_status = data.get("status")
+             if runpod_status and task_record.status != runpod_status:
+                 task_record.status = runpod_status
+                 db.commit()
 
     return data
+
+
+@app.get("/api/tasks", response_model=list[TaskResponse])
+def get_user_tasks(current_user: User = Depends(get_current_user), db=Depends(get_db)):
+    return db.query(Task).filter(Task.user_id == current_user.id).order_by(desc(Task.created_at)).all()
 
 
 # ----------------------------
 # PUBLIC media proxy (Solution A)
 # ----------------------------
+@app.get("/api/media/download/{key:path}")
+def download_media(key: str, format: str = None):
+    """
+    Download media, optionally converting to mp4.
+    """
+    require_env()
+    s3 = s3_client()
+    bucket = RUNPOD_VOLUME_ID
+
+    try:
+        # 1. Download original file to temp
+        obj = s3.get_object(Bucket=bucket, Key=key)
+        original_ext = os.path.splitext(key)[1].lower()
+        if not original_ext:
+            original_ext = mimetypes.guess_extension(obj.get("ContentType", "")) or ".bin"
+        
+        with tempfile.NamedTemporaryFile(suffix=original_ext, delete=False) as tmp_in:
+            for chunk in obj["Body"].iter_chunks(chunk_size=1024 * 1024):
+                tmp_in.write(chunk)
+            tmp_in_path = tmp_in.name
+
+        # 2. Check if conversion needed
+        final_path = tmp_in_path
+        final_filename = os.path.basename(key)
+
+        if format == "mp4" and original_ext != ".mp4":
+            # Convert to MP4 using ffmpeg
+            tmp_out_path = tmp_in_path + ".mp4"
+            try:
+                # ffmpeg -i input.webp -pix_fmt yuv420p output.mp4
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", tmp_in_path,
+                    "-pix_fmt", "yuv420p", # Ensure compatibility
+                    "-movflags", "+faststart",
+                    tmp_out_path
+                ]
+                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                final_path = tmp_out_path
+                final_filename = os.path.splitext(final_filename)[0] + ".mp4"
+            except subprocess.CalledProcessError as e:
+                print(f"❌ FFmpeg conversion failed: {e.stderr.decode()}")
+                # Fallback to original
+                pass
+            except FileNotFoundError:
+                print("❌ FFmpeg not found. Serving original.")
+                pass
+
+        # 3. Serve file
+        # Note: BackgroundTask can be used to cleanup temp files after response, 
+        # but for simplicity in this snippet we rely on OS temp cleanup or manual if we added BackgroundTasks.
+        # Let's add simple cleanup on yield if we used StreamingResponse, 
+        # but FileResponse is easier here. To cleanup, we can subclass or use background task.
+        from starlette.background import BackgroundTask
+        
+        def cleanup():
+            if os.path.exists(tmp_in_path):
+                os.unlink(tmp_in_path)
+            if os.path.exists(final_path) and final_path != tmp_in_path:
+                os.unlink(final_path)
+
+        return FileResponse(
+            final_path, 
+            filename=final_filename, 
+            media_type="video/mp4" if final_path.endswith(".mp4") else guess_mime(final_path),
+            background=BackgroundTask(cleanup)
+        )
+
+    except Exception as e:
+        print(f"Download error: {e}")
+        raise HTTPException(404, f"Download failed: {e}")
+
+
 @app.get("/api/media/{key:path}")
 def get_media(key: str, request: Request):
     """
@@ -460,3 +604,6 @@ def get_media(key: str, request: Request):
         headers["Content-Length"] = str(size)
 
     return StreamingResponse(iter_body(), media_type=content_type, headers=headers)
+
+
+
