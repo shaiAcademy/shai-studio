@@ -28,6 +28,9 @@ const translations = {
         guest: "Guest",
         logout: "Logout",
         launchStudio: "Launch Studio",
+        openN8n: "Open n8n",
+        n8nRedirecting: "Redirecting...",
+        n8nError: "Failed to redirect to n8n",
 
         // Hero
         heroTitle: "Craft production-grade visuals with AI",
@@ -102,6 +105,9 @@ const translations = {
         guest: "Гость",
         logout: "Выйти",
         launchStudio: "Открыть студию",
+        openN8n: "Открыть n8n",
+        n8nRedirecting: "Перенаправление...",
+        n8nError: "Не удалось перейти в n8n",
 
         // Hero
         heroTitle: "Создавайте визуальный контент с помощью ИИ",
@@ -176,6 +182,9 @@ const translations = {
         guest: "Қонақ",
         logout: "Шығу",
         launchStudio: "Студияны ашу",
+        openN8n: "n8n ашу",
+        n8nRedirecting: "Қайта бағыттау...",
+        n8nError: "n8n-ге өту мүмкін болмады",
 
         // Hero
         heroTitle: "AI көмегімен визуалды контент жасаңыз",
@@ -438,6 +447,14 @@ const IconGlobe = () => (
     </svg>
 );
 
+const IconN8n = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
+    </svg>
+);
+
 export default function App() {
     const [lang, setLang] = useState(() => localStorage.getItem("shai_lang") || "en");
     const t = translations[lang];
@@ -461,6 +478,7 @@ export default function App() {
     const [tasks, setTasks] = useState([]);
 
     const [langMenuOpen, setLangMenuOpen] = useState(false);
+    const [n8nLoading, setN8nLoading] = useState(false);
 
     useEffect(() => {
         const saved = localStorage.getItem("gen_token");
@@ -544,6 +562,37 @@ export default function App() {
         setPassword("");
         setName("");
         setTab(0);
+    };
+
+    const handleN8nRedirect = async () => {
+        if (!token) {
+            setError(t.signInFirst);
+            return;
+        }
+
+        setN8nLoading(true);
+        setError("");
+
+        try {
+            const response = await axios.post(
+                `${API_BASE}/n8n/redirect`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const data = response.data;
+
+            if (data.success && data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            } else {
+                throw new Error(t.n8nError);
+            }
+        } catch (err) {
+            console.error("Error redirecting to n8n:", err);
+            const msg = err?.response?.data?.detail || err?.message || t.n8nError;
+            setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+            setN8nLoading(false);
+        }
     };
 
     const handleGenerate = async () => {
@@ -664,6 +713,17 @@ export default function App() {
                         {isAuthed && (
                             <button className="btn btn-outline btn-sm" onClick={handleLogout}>
                                 <IconLogout /> {t.logout}
+                            </button>
+                        )}
+
+                        {isAuthed && (
+                            <button
+                                className="btn btn-outline"
+                                onClick={handleN8nRedirect}
+                                disabled={n8nLoading}
+                                style={{ borderColor: '#FF6D5A', color: '#FF6D5A' }}
+                            >
+                                <IconN8n /> {n8nLoading ? t.n8nRedirecting : t.openN8n}
                             </button>
                         )}
 

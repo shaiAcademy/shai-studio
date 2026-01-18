@@ -1,7 +1,12 @@
 import os
 import mimetypes
+import secrets
+import time
 from typing import Optional, Tuple
 from datetime import datetime, timedelta
+
+# n8n integration
+from n8n_user_service import create_or_get_n8n_user
 
 import firebase_admin
 from firebase_admin import credentials, auth
@@ -90,6 +95,17 @@ JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+# ----------------------------
+# ENV (n8n Integration)
+# ----------------------------
+N8N_PROXY_URL = os.getenv("N8N_PROXY_URL", "https://n8n-proxy.shai.academy")
+N8N_TOKEN_TTL_SECONDS = int(os.getenv("N8N_TOKEN_TTL_SECONDS", "300"))  # 5 minutes
+
+# In-memory token store for n8n redirect tokens
+# Format: {token: {"email": str, "userId": str, "expiresAt": float}}
+# In production, use Redis instead
+n8n_token_store: dict = {}
 
 # ----------------------------
 # DB
@@ -606,4 +622,98 @@ def get_media(key: str, request: Request):
     return StreamingResponse(iter_body(), media_type=content_type, headers=headers)
 
 
+# ----------------------------
+# n8n Integration endpoints
+# ----------------------------
+class N8nRedirectResponse(BaseModel):
+    success: bool
+    redirectUrl: str
 
+
+class N8nTokenValidateRequest(BaseModel):
+    token: str
+
+
+class N8nTokenValidateResponse(BaseModel):
+    email: str
+    userId: Optional[str] = None
+
+
+def cleanup_expired_tokens():
+    """Remove expired tokens from the store"""
+    current_time = time.time()
+    expired = [t for t, data in n8n_token_store.items() if data["expiresAt"] < current_time]
+    for t in expired:
+        del n8n_token_store[t]
+
+
+@app.post("/api/n8n/redirect", response_model=N8nRedirectResponse)
+def redirect_to_n8n(current_user: User = Depends(get_current_user)):
+    """
+    Create/verify user in n8n and return redirect URL with auth token.
+    Requires authentication.
+    """
+    try:
+        # Create or get user in n8n database
+        n8n_user = create_or_get_n8n_user(
+            email=current_user.email,
+            first_name=current_user.name
+        )
+        
+        # Generate temporary token
+        token = secrets.token_hex(32)
+        expires_at = time.time() + N8N_TOKEN_TTL_SECONDS
+        
+        # Store token
+        n8n_token_store[token] = {
+            "email": current_user.email,
+            "userId": n8n_user.get("userId"),
+            "expiresAt": expires_at
+        }
+        
+        # Cleanup old tokens periodically
+        cleanup_expired_tokens()
+        
+        # Build redirect URL
+        redirect_url = f"{N8N_PROXY_URL}/n8n-auth?token={token}"
+        
+        print(f"✅ Created n8n redirect for user: {current_user.email}")
+        
+        return N8nRedirectResponse(success=True, redirectUrl=redirect_url)
+        
+    except FileNotFoundError as e:
+        print(f"❌ n8n database not found: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="n8n service is not available. Database not found."
+        )
+    except Exception as e:
+        print(f"❌ Error creating n8n redirect: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/n8n/validate-token", response_model=N8nTokenValidateResponse)
+def validate_n8n_token(data: N8nTokenValidateRequest):
+    """
+    Validate a redirect token. Called by the n8n proxy service.
+    This endpoint is public (no auth required).
+    """
+    token = data.token
+    token_data = n8n_token_store.get(token)
+    
+    if not token_data:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    # Check expiration
+    if time.time() > token_data["expiresAt"]:
+        # Remove expired token
+        del n8n_token_store[token]
+        raise HTTPException(status_code=401, detail="Token expired")
+    
+    # Token is valid - remove it (one-time use)
+    del n8n_token_store[token]
+    
+    return N8nTokenValidateResponse(
+        email=token_data["email"],
+        userId=token_data.get("userId")
+    )
