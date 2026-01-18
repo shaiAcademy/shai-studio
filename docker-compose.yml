@@ -46,6 +46,7 @@ services:
       JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN:-43200}
     volumes:
       - ./fastapi_api:/app
+      - n8n_data:/mnt/n8n_data
     ports:
       - "8000:8000"
     dns:
@@ -72,7 +73,9 @@ services:
 
 volumes:
   postgres_data:
-
+  n8n_data:
+    external: true
+    name: n8n_n8n_data
 
 networks:
   default:
