@@ -42,7 +42,7 @@ def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
     try:
         # Check if user already exists
         cursor.execute(
-            'SELECT id, email, firstName, role FROM "user" WHERE email = ?',
+            'SELECT id, email, firstName FROM "user" WHERE email = ?',
             (email,)
         )
         row = cursor.fetchone()
@@ -52,7 +52,7 @@ def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
                 "userId": row[0],
                 "email": row[1],
                 "firstName": row[2] or "",
-                "globalRole": row[3],
+                "globalRole": "global:member",
                 "exists": True
             }
         
@@ -75,17 +75,16 @@ def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
         cursor.execute('''
             INSERT INTO "user" (
                 id, email, firstName, lastName, password, 
-                role, apiKey, 
+                apiKey, 
                 personalizationAnswers, settings,
                 createdAt, updatedAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             user_id,
             email,
             user_first_name,
             '',  # lastName
             hashed_password,
-            'global:member',
             api_key,
             '{}',  # personalizationAnswers
             None,  # settings
@@ -133,7 +132,7 @@ def get_n8n_user_by_email(email: str) -> Optional[dict]:
     
     try:
         cursor.execute(
-            'SELECT id, email, firstName, role FROM "user" WHERE email = ?',
+            'SELECT id, email, firstName FROM "user" WHERE email = ?',
             (email,)
         )
         row = cursor.fetchone()
@@ -143,7 +142,7 @@ def get_n8n_user_by_email(email: str) -> Optional[dict]:
                 "userId": row[0],
                 "email": row[1],
                 "firstName": row[2] or "",
-                "globalRole": row[3]
+                "globalRole": "global:member"
             }
         
         return None
