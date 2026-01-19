@@ -42,7 +42,7 @@ def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
     try:
         # Check if user already exists
         cursor.execute(
-            'SELECT id, email, firstName, globalRole FROM "user" WHERE email = ?',
+            'SELECT id, email, firstName, role FROM "user" WHERE email = ?',
             (email,)
         )
         row = cursor.fetchone()
@@ -75,7 +75,7 @@ def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
         cursor.execute('''
             INSERT INTO "user" (
                 id, email, firstName, lastName, password, 
-                role, globalRole, apiKey, 
+                role, apiKey, 
                 personalizationAnswers, settings,
                 createdAt, updatedAt
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -85,8 +85,7 @@ def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
             user_first_name,
             '',  # lastName
             hashed_password,
-            'global:member',  # role
-            'global:member',  # globalRole
+            'global:member',
             api_key,
             '{}',  # personalizationAnswers
             None,  # settings
@@ -102,7 +101,7 @@ def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
             "userId": user_id,
             "email": email,
             "firstName": user_first_name,
-            "globalRole": "global:member",
+            "role": "global:member",
             "exists": False
         }
         
@@ -134,7 +133,7 @@ def get_n8n_user_by_email(email: str) -> Optional[dict]:
     
     try:
         cursor.execute(
-            'SELECT id, email, firstName, globalRole FROM "user" WHERE email = ?',
+            'SELECT id, email, firstName, role FROM "user" WHERE email = ?',
             (email,)
         )
         row = cursor.fetchone()

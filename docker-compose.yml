@@ -10,6 +10,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - /home/almas_b/n8n/n8n_data/database.sqlite:/var/lib/docker/volumes/n8n_n8n_data/_data/database.sqlite:ro
+        
     networks:
       default:
         aliases:
@@ -29,6 +31,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg2://shai:shai@postgres:5432/shai_db
+      N8N_DB_PATH: /n8n_db/database.sqlite
 
       # RunPod Serverless
       RUNPOD_API_KEY: ${RUNPOD_API_KEY}
@@ -46,7 +49,7 @@ services:
       JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN:-43200}
     volumes:
       - ./fastapi_api:/app
-      - n8n_data:/mnt/n8n_data
+      - n8n_n8n_data:/n8n_db:ro
     ports:
       - "8000:8000"
     dns:
@@ -73,10 +76,10 @@ services:
 
 volumes:
   postgres_data:
-  n8n_data:
-    external: true
-    name: n8n_n8n_data
+  n8n_n8n_data:
+    external: true    
 
 networks:
   default:
     driver: bridge
+
