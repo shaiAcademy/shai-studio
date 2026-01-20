@@ -3,12 +3,15 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY requirements.txt .
-# Install system dependencies including ffmpeg
+# Install system dependencies including ffmpeg and ImageMagick for video conversion
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*.txt
+    imagemagick \
+    libwebp-dev \
+    webp \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir -r requirements.txt
 

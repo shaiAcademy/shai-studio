@@ -477,38 +477,78 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
 
 def convert_and_upload_mp4(task_id: str, webp_key: str, s3, bucket: str) -> Optional[str]:
     """
-    Downloads WebP, converts to MP4 (forcing ~6s duration), uploads to S3, returns new key.
+    Downloads animated WebP, converts to MP4 (forcing ~6s duration), uploads to S3, returns new key.
+    Uses GIF as intermediate format since FFmpeg handles animated GIF much better than animated WebP.
     """
     if not shutil.which("ffmpeg"):
         print("❌ Server Error: FFmpeg not installed. Cannot convert video.")
         return None
 
+    tmp_in_path = None
+    tmp_gif_path = None
+    tmp_out_path = None
+    
     try:
         # 1. Download WebP
         with tempfile.NamedTemporaryFile(suffix=".webp", delete=False) as tmp_in:
             s3.download_fileobj(bucket, webp_key, tmp_in)
             tmp_in_path = tmp_in.name
         
+        tmp_gif_path = tmp_in_path + ".gif"
         tmp_out_path = tmp_in_path + ".mp4"
         
-        # 2. Convert to MP4 with FFmpeg
-        # force 6s duration (~48 frames / 8 fps) or interpolate
-        # -r 8: set frame rate
-        # -minterpolate: basic interpolation to smooth it out if frames are low
-        cmd = [
-            "ffmpeg", "-y",
-            "-i", tmp_in_path,
-            "-filter:v", "minterpolate=fps=8,setpts=4*PTS",  # Slow down 4x (approx 1.5s -> 6s)
-            "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
-            tmp_out_path
-        ]
-        # Alternative simple stretch without interpolation (just slow playback):
-        # cmd = ["ffmpeg", "-y", "-r", "8", "-i", tmp_in_path, "-vf", "setpts=4*PTS", "-pix_fmt", "yuv420p", tmp_out_path]
+        # 2. First convert animated WebP to GIF using ImageMagick (if available)
+        # ImageMagick handles animated WebP much better than FFmpeg
+        use_gif_intermediate = False
         
-        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if shutil.which("convert"):  # ImageMagick's convert
+            try:
+                gif_cmd = [
+                    "convert", tmp_in_path, tmp_gif_path
+                ]
+                subprocess.run(gif_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+                use_gif_intermediate = True
+                print(f"✅ Converted WebP to GIF intermediate for task {task_id}")
+            except Exception as gif_err:
+                print(f"⚠️ GIF intermediate conversion failed, trying direct: {gif_err}")
+                use_gif_intermediate = False
         
-        # 3. Upload MP4
+        # 3. Convert to MP4 with FFmpeg
+        # If GIF intermediate exists, use it; otherwise try direct WebP (may fail for animated)
+        input_file = tmp_gif_path if use_gif_intermediate and os.path.exists(tmp_gif_path) else tmp_in_path
+        
+        # Use -ignore_loop 0 for GIFs to handle animation properly
+        # Apply time stretching to achieve ~6s duration
+        if use_gif_intermediate:
+            cmd = [
+                "ffmpeg", "-y",
+                "-ignore_loop", "0",  # Proper GIF loop handling
+                "-i", input_file,
+                "-t", "6",  # Limit to 6 seconds
+                "-filter:v", "fps=24,setpts=3.0*PTS",  # Slow down 3x
+                "-pix_fmt", "yuv420p",
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-movflags", "+faststart",
+                tmp_out_path
+            ]
+        else:
+            # Fallback: try with webp demuxer settings
+            cmd = [
+                "ffmpeg", "-y",
+                "-framerate", "8",  # Assume low framerate for animated webp
+                "-i", input_file,
+                "-filter:v", "setpts=4*PTS",  # Slow down 4x
+                "-pix_fmt", "yuv420p",
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-movflags", "+faststart",
+                tmp_out_path
+            ]
+        
+        result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120)
+        
+        # 4. Upload MP4
         mp4_key = webp_key.replace(".webp", ".mp4")
         if mp4_key == webp_key:
             mp4_key += ".mp4"
@@ -520,17 +560,25 @@ def convert_and_upload_mp4(task_id: str, webp_key: str, s3, bucket: str) -> Opti
                 mp4_key, 
                 ExtraArgs={"ContentType": "video/mp4", "ACL": "public-read"}
             )
-            
-        # Cleanup
-        os.unlink(tmp_in_path)
-        os.unlink(tmp_out_path)
         
+        print(f"✅ Uploaded converted MP4: {mp4_key}")
         return mp4_key
+        
+    except subprocess.CalledProcessError as e:
+        err_output = e.stderr.decode() if e.stderr else str(e)
+        print(f"❌ FFmpeg conversion failed for {task_id}: {err_output}")
+        return None
     except Exception as e:
         print(f"❌ Conversion failed for {task_id}: {e}")
-        if os.path.exists(tmp_in_path): os.unlink(tmp_in_path)
-        if os.path.exists(tmp_out_path): os.unlink(tmp_out_path)
         return None
+    finally:
+        # Cleanup all temp files
+        for path in [tmp_in_path, tmp_gif_path, tmp_out_path]:
+            if path and os.path.exists(path):
+                try:
+                    os.unlink(path)
+                except:
+                    pass
 
 
 @app.get("/api/generate/status/{task_id}")
@@ -609,12 +657,17 @@ def get_user_tasks(current_user: User = Depends(get_current_user), db=Depends(ge
 def download_media(key: str, format: str = "mp4"): # Default to mp4
     """
     Download media, converting to mp4 by default if needed.
+    Uses GIF intermediate for animated WebP since FFmpeg handles GIF better.
     Also STRETCHES video to 3x duration if it's a generated video (short).
     """
     require_env()
     s3 = s3_client()
     bucket = RUNPOD_VOLUME_ID
 
+    tmp_in_path = None
+    tmp_gif_path = None
+    tmp_out_path = None
+    
     try:
         # 1. Download original file to temp
         print(f"⬇️ Downloading {key} for conversion...")
@@ -632,29 +685,77 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
         final_path = tmp_in_path
         final_filename = os.path.basename(key)
         
-        # Always attempt conversion if target is mp4, specifically to apply filters
-        # even if input is already mp4 (to stretch it).
+        # Always attempt conversion if target is mp4
         if format == "mp4":
             print(f"🔄 Converting/Stretching {key} to MP4...")
+            tmp_gif_path = tmp_in_path + ".gif"
             tmp_out_path = tmp_in_path + ".mp4"
+            
             try:
-                # ffmpeg -i input.webp -filter:v "setpts=3.0*PTS" -pix_fmt yuv420p output.mp4
-                # setpts=3.0*PTS slows down video by 3x (2s -> 6s)
-                cmd = [
-                    "ffmpeg", "-y",
-                    "-i", tmp_in_path,
-                    "-filter:v", "setpts=3.0*PTS", 
-                    "-pix_fmt", "yuv420p", # Ensure compatibility
-                    "-movflags", "+faststart",
-                    tmp_out_path
-                ]
+                # For animated WebP, convert to GIF first using ImageMagick
+                use_gif_intermediate = False
+                is_webp = original_ext == ".webp"
+                
+                if is_webp and shutil.which("convert"):  # ImageMagick's convert
+                    try:
+                        gif_cmd = ["convert", tmp_in_path, tmp_gif_path]
+                        subprocess.run(gif_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+                        use_gif_intermediate = True
+                        print(f"✅ Converted WebP to GIF intermediate")
+                    except Exception as gif_err:
+                        print(f"⚠️ GIF intermediate conversion failed, trying direct: {gif_err}")
+                        use_gif_intermediate = False
+                
+                # Determine input file for FFmpeg
+                input_file = tmp_gif_path if use_gif_intermediate and os.path.exists(tmp_gif_path) else tmp_in_path
+                
+                # Build FFmpeg command based on input type
+                if use_gif_intermediate:
+                    cmd = [
+                        "ffmpeg", "-y",
+                        "-ignore_loop", "0",
+                        "-i", input_file,
+                        "-t", "6",  # Limit to 6 seconds
+                        "-filter:v", "fps=24,setpts=3.0*PTS",  # Slow down 3x
+                        "-pix_fmt", "yuv420p",
+                        "-c:v", "libx264",
+                        "-preset", "fast",
+                        "-movflags", "+faststart",
+                        tmp_out_path
+                    ]
+                elif is_webp:
+                    # Direct WebP attempt (may fail for animated)
+                    cmd = [
+                        "ffmpeg", "-y",
+                        "-framerate", "8",
+                        "-i", input_file,
+                        "-filter:v", "setpts=3.0*PTS",
+                        "-pix_fmt", "yuv420p",
+                        "-c:v", "libx264",
+                        "-preset", "fast",
+                        "-movflags", "+faststart",
+                        tmp_out_path
+                    ]
+                else:
+                    # Non-WebP video/image
+                    cmd = [
+                        "ffmpeg", "-y",
+                        "-i", input_file,
+                        "-filter:v", "setpts=3.0*PTS", 
+                        "-pix_fmt", "yuv420p",
+                        "-c:v", "libx264",
+                        "-preset", "fast",
+                        "-movflags", "+faststart",
+                        tmp_out_path
+                    ]
                 
                 # Run with captured output for debugging
                 process = subprocess.run(
                     cmd, 
                     check=True, 
                     stdout=subprocess.PIPE, 
-                    stderr=subprocess.PIPE
+                    stderr=subprocess.PIPE,
+                    timeout=120
                 )
                 
                 final_path = tmp_out_path
@@ -662,7 +763,7 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
                 print(f"✅ Conversion successful: {final_path}")
                 
             except subprocess.CalledProcessError as e:
-                err_msg = e.stderr.decode()
+                err_msg = e.stderr.decode() if e.stderr else str(e)
                 print(f"❌ FFmpeg conversion failed: {err_msg}")
                 # Enforce strict MP4 requirement
                 raise HTTPException(500, f"Video processing/conversion failed: {err_msg}")
@@ -674,10 +775,12 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
         from starlette.background import BackgroundTask
         
         def cleanup():
-            if os.path.exists(tmp_in_path):
-                os.unlink(tmp_in_path)
-            if os.path.exists(final_path) and final_path != tmp_in_path:
-                os.unlink(final_path)
+            for path in [tmp_in_path, tmp_gif_path, tmp_out_path]:
+                if path and os.path.exists(path):
+                    try:
+                        os.unlink(path)
+                    except:
+                        pass
 
         return FileResponse(
             final_path, 
@@ -686,6 +789,8 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
             background=BackgroundTask(cleanup)
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Download error: {e}")
         raise HTTPException(404, f"Download failed: {e}")
