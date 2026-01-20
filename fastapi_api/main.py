@@ -422,15 +422,12 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
         }
     }
     if kind == "video":
-        # Attempt to force 6 seconds duration
-        # Strategy: Request 48 frames at 8 FPS = 6 seconds.
-        # If model is SVD (usually 25 frames max without tiling), 
-        # we still request 48. If it truncates to 25, 
-        # our FFmpeg logic in generate_status will stretch it.
-        target_fps = 8
-        target_frames = 48
+        # 8-second video configuration: 96 frames at 12 FPS
+        # AnimateDiff context window for memory-safe long video on 4090
+        target_fps = 12
+        target_frames = 96  # 96 frames / 12 FPS = 8 seconds
         
-        # Exhaustive list of parameter aliases
+        # Core frame parameters - multiple aliases for compatibility
         body["input"]["fps"] = target_fps
         body["input"]["frames_per_second"] = target_fps
         body["input"]["output_fps"] = target_fps
@@ -442,9 +439,28 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
         body["input"]["n_frames"] = target_frames
         body["input"]["frame_count"] = target_frames
         body["input"]["length"] = target_frames
-
+        body["input"]["total_frames"] = target_frames
+        
+        # AnimateDiff Uniform Context Options for long video generation
+        # Context window of 16 frames with stride 1 allows processing 96 frames
+        # without running out of VRAM on 4090 (24GB)
+        body["input"]["context_length"] = 16
+        body["input"]["context_stride"] = 1
+        body["input"]["context_overlap"] = 4  # Smooth transitions between chunks
+        body["input"]["context_schedule"] = "uniform"
+        
+        # Alternative parameter names for context (different workflows)
+        body["input"]["uniform_context_options"] = {
+            "context_length": 16,
+            "context_stride": 1,
+            "context_overlap": 4,
+            "context_schedule": "uniform"
+        }
+        
+        # Motion/quality parameters
         body["input"]["motion_bucket_id"] = 127
         body["input"]["decoding_t"] = 1
+        body["input"]["motion_scale"] = 1.0
 
     if seed is not None:
         body["input"]["seed"] = int(seed)
