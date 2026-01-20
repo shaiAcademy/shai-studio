@@ -562,6 +562,10 @@ export default function App() {
         setPassword("");
         setName("");
         setTab(0);
+        // Clear SSO cookie
+        document.cookie = "shai_user_email=; domain=.shai.academy; path=/; Max-Age=0; Secure";
+        // Reload page to clear all state
+        window.location.reload();
     };
 
     const handleN8nRedirect = async () => {
