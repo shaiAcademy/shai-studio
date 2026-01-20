@@ -422,13 +422,15 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
         }
     }
     if kind == "video":
-        # Attempt to force 6+ seconds duration
-        # SVD usually outputs 14 or 25 frames.
-        # To get 6 seconds from 25 frames, we need approx 4 fps (25/4 = 6.25s).
-        target_fps = 4
-        target_frames = 25 # Requesting 25 (XT standard) to be safe, or 48 if it supports tiling
+        # Attempt to force 6 seconds duration
+        # Strategy: Request 48 frames at 8 FPS = 6 seconds.
+        # If model is SVD (usually 25 frames max without tiling), 
+        # we still request 48. If it truncates to 25, 
+        # our FFmpeg logic in generate_status will stretch it.
+        target_fps = 8
+        target_frames = 48
         
-        # We try to be exhaustive with parameters to hit whatever the worker uses
+        # Exhaustive list of parameter aliases
         body["input"]["fps"] = target_fps
         body["input"]["frames_per_second"] = target_fps
         body["input"]["output_fps"] = target_fps
@@ -439,9 +441,10 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
         body["input"]["frames"] = target_frames
         body["input"]["n_frames"] = target_frames
         body["input"]["frame_count"] = target_frames
+        body["input"]["length"] = target_frames
 
         body["input"]["motion_bucket_id"] = 127
-        body["input"]["decoding_t"] = 1 # Attempt to assist decoding consistency if used
+        body["input"]["decoding_t"] = 1
 
     if seed is not None:
         body["input"]["seed"] = int(seed)
@@ -469,6 +472,63 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
     return data
 
 
+    return data
+
+
+def convert_and_upload_mp4(task_id: str, webp_key: str, s3, bucket: str) -> Optional[str]:
+    """
+    Downloads WebP, converts to MP4 (forcing ~6s duration), uploads to S3, returns new key.
+    """
+    try:
+        # 1. Download WebP
+        with tempfile.NamedTemporaryFile(suffix=".webp", delete=False) as tmp_in:
+            s3.download_fileobj(bucket, webp_key, tmp_in)
+            tmp_in_path = tmp_in.name
+        
+        tmp_out_path = tmp_in_path + ".mp4"
+        
+        # 2. Convert to MP4 with FFmpeg
+        # force 6s duration (~48 frames / 8 fps) or interpolate
+        # -r 8: set frame rate
+        # -minterpolate: basic interpolation to smooth it out if frames are low
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", tmp_in_path,
+            "-filter:v", "minterpolate=fps=8,setpts=4*PTS",  # Slow down 4x (approx 1.5s -> 6s)
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+            tmp_out_path
+        ]
+        # Alternative simple stretch without interpolation (just slow playback):
+        # cmd = ["ffmpeg", "-y", "-r", "8", "-i", tmp_in_path, "-vf", "setpts=4*PTS", "-pix_fmt", "yuv420p", tmp_out_path]
+        
+        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # 3. Upload MP4
+        mp4_key = webp_key.replace(".webp", ".mp4")
+        if mp4_key == webp_key:
+            mp4_key += ".mp4"
+            
+        with open(tmp_out_path, "rb") as f:
+            s3.upload_fileobj(
+                f, 
+                bucket, 
+                mp4_key, 
+                ExtraArgs={"ContentType": "video/mp4", "ACL": "public-read"}
+            )
+            
+        # Cleanup
+        os.unlink(tmp_in_path)
+        os.unlink(tmp_out_path)
+        
+        return mp4_key
+    except Exception as e:
+        print(f"❌ Conversion failed for {task_id}: {e}")
+        if os.path.exists(tmp_in_path): os.unlink(tmp_in_path)
+        if os.path.exists(tmp_out_path): os.unlink(tmp_out_path)
+        return None
+
+
 @app.get("/api/generate/status/{task_id}")
 def generate_status(task_id: str, current_user: User = Depends(get_current_user), db=Depends(get_db)):
     require_env()
@@ -480,7 +540,7 @@ def generate_status(task_id: str, current_user: User = Depends(get_current_user)
 
     data = r.json()
 
-    # добавляем media_url для фронта
+    # добавдяем media_url для фронта
     if data.get("status") == "COMPLETED":
         out = data.get("output") or {}
         media_key = out.get("media_key")
@@ -488,7 +548,25 @@ def generate_status(task_id: str, current_user: User = Depends(get_current_user)
         # fallback если у тебя возвращается filename
         if not media_key and out.get("filename"):
             media_key = f"ComfyUI/output/{out['filename']}"
-
+        
+        # KEY CHANGE: Check if we need to convert WebP to MP4
+        if media_key and media_key.lower().endswith(".webp"):
+            # Check if we already converted it (look in DB or just check string)
+            # ideally check DB, but here we check if we already have an MP4 override
+            task_record = db.query(Task).filter(Task.task_id == task_id).first()
+            if task_record and task_record.media_url and task_record.media_url.endswith(".mp4"):
+                # Already converted
+                data["output"]["media_url"] = task_record.media_url
+            else:
+                # Need conversion
+                print(f"🔄 Converting WebP to MP4 for task {task_id}...")
+                s3 = s3_client()
+                bucket = RUNPOD_VOLUME_ID
+                new_key = convert_and_upload_mp4(task_id, media_key, s3, bucket)
+                
+                if new_key:
+                    media_key = new_key # pointing to MP4 now
+        
         if media_key:
             media_url = f"/api/media/{media_key}"
             data.setdefault("output", {})
@@ -497,7 +575,8 @@ def generate_status(task_id: str, current_user: User = Depends(get_current_user)
             # Update DB if needed
             task_record = db.query(Task).filter(Task.task_id == task_id).first()
             if task_record:
-                if task_record.status != "COMPLETED":
+                # Update status or URL
+                if task_record.status != "COMPLETED" or task_record.media_url != media_url:
                     task_record.status = "COMPLETED"
                     task_record.media_url = media_url
                     db.commit()
