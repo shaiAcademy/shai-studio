@@ -423,12 +423,19 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
     }
     if kind == "video":
         # Attempt to force 6 seconds duration
-        # If the model is SVD (14/25 frames fixed), lowering FPS to 6-8 helps stretch it.
-        # If the model is AnimateDiff, it respects frames.
-        # We send both video_frames and num_frames to cover common parameter mapping names.
-        body["input"]["video_frames"] = 48
-        body["input"]["num_frames"] = 48  
-        body["input"]["fps"] = 8
+        # We send multiple parameter variations to cover different RunPod worker implementations (SVD, AnimateDiff, etc.)
+        target_fps = 8
+        target_frames = 48 # 6 seconds * 8 fps
+        
+        body["input"]["video_frames"] = target_frames
+        body["input"]["num_frames"] = target_frames
+        body["input"]["frames"] = target_frames
+        body["input"]["n_frames"] = target_frames
+        body["input"]["frame_count"] = target_frames
+        
+        body["input"]["fps"] = target_fps
+        body["input"]["frames_per_second"] = target_fps
+        
         body["input"]["motion_bucket_id"] = 127
 
     if seed is not None:
