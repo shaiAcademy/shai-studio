@@ -479,6 +479,10 @@ def convert_and_upload_mp4(task_id: str, webp_key: str, s3, bucket: str) -> Opti
     """
     Downloads WebP, converts to MP4 (forcing ~6s duration), uploads to S3, returns new key.
     """
+    if not shutil.which("ffmpeg"):
+        print("❌ Server Error: FFmpeg not installed. Cannot convert video.")
+        return None
+
     try:
         # 1. Download WebP
         with tempfile.NamedTemporaryFile(suffix=".webp", delete=False) as tmp_in:
@@ -660,14 +664,11 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
             except subprocess.CalledProcessError as e:
                 err_msg = e.stderr.decode()
                 print(f"❌ FFmpeg conversion failed: {err_msg}")
-                # We raise error here to make it visible to user instead of silent fallback
-                # raise HTTPException(500, f"Video processing failed: {err_msg}")
-                # OR fallback but log heavily. User complained about webp, so let's fail if we can't make mp4
-                print("⚠️ Falling back to original file due to error.")
-                pass
+                # Enforce strict MP4 requirement
+                raise HTTPException(500, f"Video processing/conversion failed: {err_msg}")
             except FileNotFoundError:
                 print("❌ FFmpeg not found on server.")
-                pass
+                raise HTTPException(500, "Server Error: ffmpeg tools missing for video conversion.")
 
         # 3. Serve file
         from starlette.background import BackgroundTask
