@@ -526,6 +526,7 @@ def get_user_tasks(current_user: User = Depends(get_current_user), db=Depends(ge
 def download_media(key: str, format: str = "mp4"): # Default to mp4
     """
     Download media, converting to mp4 by default if needed.
+    Also STRETCHES video to 3x duration if it's a generated video (short).
     """
     require_env()
     s3 = s3_client()
@@ -533,6 +534,7 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
 
     try:
         # 1. Download original file to temp
+        print(f"⬇️ Downloading {key} for conversion...")
         obj = s3.get_object(Bucket=bucket, Key=key)
         original_ext = os.path.splitext(key)[1].lower()
         if not original_ext:
@@ -543,32 +545,49 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
                 tmp_in.write(chunk)
             tmp_in_path = tmp_in.name
 
-        # 2. Check if conversion needed (force MP4 unless requested otherwise)
+        # 2. Check if conversion/stretching needed
         final_path = tmp_in_path
         final_filename = os.path.basename(key)
-
-        # Force conversion if it's not mp4 and format is mp4
-        if format == "mp4" and original_ext != ".mp4":
-            # Convert to MP4 using ffmpeg
+        
+        # Always attempt conversion if target is mp4, specifically to apply filters
+        # even if input is already mp4 (to stretch it).
+        if format == "mp4":
+            print(f"🔄 Converting/Stretching {key} to MP4...")
             tmp_out_path = tmp_in_path + ".mp4"
             try:
-                # ffmpeg -i input.webp -pix_fmt yuv420p output.mp4
+                # ffmpeg -i input.webp -filter:v "setpts=3.0*PTS" -pix_fmt yuv420p output.mp4
+                # setpts=3.0*PTS slows down video by 3x (2s -> 6s)
                 cmd = [
                     "ffmpeg", "-y",
                     "-i", tmp_in_path,
+                    "-filter:v", "setpts=3.0*PTS", 
                     "-pix_fmt", "yuv420p", # Ensure compatibility
                     "-movflags", "+faststart",
                     tmp_out_path
                 ]
-                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                
+                # Run with captured output for debugging
+                process = subprocess.run(
+                    cmd, 
+                    check=True, 
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE
+                )
+                
                 final_path = tmp_out_path
                 final_filename = os.path.splitext(final_filename)[0] + ".mp4"
+                print(f"✅ Conversion successful: {final_path}")
+                
             except subprocess.CalledProcessError as e:
-                print(f"❌ FFmpeg conversion failed: {e.stderr.decode()}")
-                # Fallback to original
+                err_msg = e.stderr.decode()
+                print(f"❌ FFmpeg conversion failed: {err_msg}")
+                # We raise error here to make it visible to user instead of silent fallback
+                # raise HTTPException(500, f"Video processing failed: {err_msg}")
+                # OR fallback but log heavily. User complained about webp, so let's fail if we can't make mp4
+                print("⚠️ Falling back to original file due to error.")
                 pass
             except FileNotFoundError:
-                print("❌ FFmpeg not found. Serving original.")
+                print("❌ FFmpeg not found on server.")
                 pass
 
         # 3. Serve file
