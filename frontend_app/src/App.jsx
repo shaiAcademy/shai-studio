@@ -716,16 +716,21 @@ export default function App() {
                             </button>
                         )}
 
-                        {isAuthed && (
-                            <button
-                                className="btn btn-outline"
-                                onClick={handleN8nRedirect}
-                                disabled={n8nLoading}
-                                style={{ borderColor: '#FF6D5A', color: '#FF6D5A' }}
-                            >
-                                <IconN8n /> {n8nLoading ? t.n8nRedirecting : t.openN8n}
-                            </button>
-                        )}
+                        <button
+                            className="btn btn-outline"
+                            onClick={() => window.location.href = "https://n8n.shai.academy"}
+                            style={{ borderColor: '#FF6D5A', color: '#FF6D5A' }}
+                        >
+                            <IconN8n /> n8n
+                        </button>
+
+                        <button
+                            className="btn btn-outline"
+                            onClick={() => window.location.href = "https://dify.shai.academy"}
+                            style={{ borderColor: '#1C64F2', color: '#1C64F2', marginLeft: '8px' }}
+                        >
+                            <IconGlobe /> Dify
+                        </button>
 
                         <button
                             className="btn btn-primary"
