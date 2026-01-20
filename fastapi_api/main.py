@@ -422,21 +422,26 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
         }
     }
     if kind == "video":
-        # Attempt to force 6 seconds duration
-        # We send multiple parameter variations to cover different RunPod worker implementations (SVD, AnimateDiff, etc.)
-        target_fps = 8
-        target_frames = 48 # 6 seconds * 8 fps
+        # Attempt to force 6+ seconds duration
+        # SVD usually outputs 14 or 25 frames.
+        # To get 6 seconds from 25 frames, we need approx 4 fps (25/4 = 6.25s).
+        target_fps = 4
+        target_frames = 25 # Requesting 25 (XT standard) to be safe, or 48 if it supports tiling
+        
+        # We try to be exhaustive with parameters to hit whatever the worker uses
+        body["input"]["fps"] = target_fps
+        body["input"]["frames_per_second"] = target_fps
+        body["input"]["output_fps"] = target_fps
+        body["input"]["decoding_fps"] = target_fps
         
         body["input"]["video_frames"] = target_frames
         body["input"]["num_frames"] = target_frames
         body["input"]["frames"] = target_frames
         body["input"]["n_frames"] = target_frames
         body["input"]["frame_count"] = target_frames
-        
-        body["input"]["fps"] = target_fps
-        body["input"]["frames_per_second"] = target_fps
-        
+
         body["input"]["motion_bucket_id"] = 127
+        body["input"]["decoding_t"] = 1 # Attempt to assist decoding consistency if used
 
     if seed is not None:
         body["input"]["seed"] = int(seed)
@@ -518,9 +523,9 @@ def get_user_tasks(current_user: User = Depends(get_current_user), db=Depends(ge
 # PUBLIC media proxy (Solution A)
 # ----------------------------
 @app.get("/api/media/download/{key:path}")
-def download_media(key: str, format: str = None):
+def download_media(key: str, format: str = "mp4"): # Default to mp4
     """
-    Download media, optionally converting to mp4.
+    Download media, converting to mp4 by default if needed.
     """
     require_env()
     s3 = s3_client()
@@ -538,10 +543,11 @@ def download_media(key: str, format: str = None):
                 tmp_in.write(chunk)
             tmp_in_path = tmp_in.name
 
-        # 2. Check if conversion needed
+        # 2. Check if conversion needed (force MP4 unless requested otherwise)
         final_path = tmp_in_path
         final_filename = os.path.basename(key)
 
+        # Force conversion if it's not mp4 and format is mp4
         if format == "mp4" and original_ext != ".mp4":
             # Convert to MP4 using ffmpeg
             tmp_out_path = tmp_in_path + ".mp4"
@@ -566,10 +572,6 @@ def download_media(key: str, format: str = None):
                 pass
 
         # 3. Serve file
-        # Note: BackgroundTask can be used to cleanup temp files after response, 
-        # but for simplicity in this snippet we rely on OS temp cleanup or manual if we added BackgroundTasks.
-        # Let's add simple cleanup on yield if we used StreamingResponse, 
-        # but FileResponse is easier here. To cleanup, we can subclass or use background task.
         from starlette.background import BackgroundTask
         
         def cleanup():
@@ -607,7 +609,15 @@ def get_media(key: str, request: Request):
         raise HTTPException(404, f"Not found: {key}. {e}")
 
     size = int(head.get("ContentLength", 0))
-    content_type = guess_mime(key)
+    
+    # Explicitly handle some types if guess fails
+    ext = os.path.splitext(key)[1].lower()
+    if ext == ".mp4":
+        content_type = "video/mp4"
+    elif ext == ".webp":
+        content_type = "image/webp"
+    else:
+        content_type = guess_mime(key)
 
     range_header = request.headers.get("range")
     byte_range = parse_range(range_header, size) if size else None
