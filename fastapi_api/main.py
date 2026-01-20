@@ -421,6 +421,11 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
             "steps": steps,
         }
     }
+    if kind == "video":
+        # 6 seconds * 8 fps = 48 frames (approx)
+        # Adjust based on your model's FPS (SVD usually 6-8fps)
+        body["input"]["video_frames"] = 48
+
     if seed is not None:
         body["input"]["seed"] = int(seed)
 
