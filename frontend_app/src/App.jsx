@@ -503,6 +503,13 @@ export default function App() {
             setTasks(mapped);
         } catch (err) {
             console.error("Failed to load tasks", err);
+            // If token is invalid (401), clear it
+            if (err?.response?.status === 401) {
+                console.warn("Token invalid or expired, logging out...");
+                setToken("");
+                localStorage.removeItem("gen_token");
+                setTasks([]);
+            }
         }
     };
 
