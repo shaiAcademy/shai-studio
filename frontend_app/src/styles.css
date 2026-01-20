@@ -729,6 +729,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* History section */
 .history-section {
+  margin-top: 32px;
   background: var(--color-bg-white);
   border: 1px solid rgba(44, 43, 47, 0.15);
   border-radius: var(--radius-card-lg);
