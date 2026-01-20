@@ -422,9 +422,14 @@ def generate(kind: str, payload: dict, current_user: User = Depends(get_current_
         }
     }
     if kind == "video":
-        # 6 seconds * 8 fps = 48 frames (approx)
-        # Adjust based on your model's FPS (SVD usually 6-8fps)
+        # Attempt to force 6 seconds duration
+        # If the model is SVD (14/25 frames fixed), lowering FPS to 6-8 helps stretch it.
+        # If the model is AnimateDiff, it respects frames.
+        # We send both video_frames and num_frames to cover common parameter mapping names.
         body["input"]["video_frames"] = 48
+        body["input"]["num_frames"] = 48  
+        body["input"]["fps"] = 8
+        body["input"]["motion_bucket_id"] = 127
 
     if seed is not None:
         body["input"]["seed"] = int(seed)
