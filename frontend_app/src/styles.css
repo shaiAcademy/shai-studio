@@ -6,31 +6,31 @@
   --color-primary: #123437;
   --color-accent: #49A598;
   --color-accent-light: #69C2B5;
-  
+
   /* Backgrounds */
   --color-bg-light: #F1F3F3;
   --color-bg-white: #FFFFFF;
   --color-bg-dark: #2C2B2F;
   --color-bg-card-dark: #323135;
   --color-bg-card-darker: #3D3C3F;
-  
+
   /* Text colors */
   --color-text-primary: #2C2B2F;
   --color-text-secondary: #495464;
   --color-text-muted: #9AA0A6;
   --color-text-light: #D4D4D4;
   --color-text-white: #FFFFFF;
-  
+
   /* Borders */
   --color-border-light: #F1F3F3;
   --color-border-dark: #474649;
   --color-border-card: #424145;
-  
+
   /* Gradients */
   --gradient-primary: linear-gradient(252.51deg, #123437 11.98%, #49A598 101.65%);
   --gradient-accent: linear-gradient(253.19deg, #69C2B5 11.6%, #49A598 87.99%);
   --gradient-accent-soft: linear-gradient(90deg, #6CD3C4 0%, #49A598 32.94%);
-  
+
   /* Border radius */
   --radius-button: 40px;
   --radius-card: 28px;
@@ -38,7 +38,7 @@
   --radius-section: 48px;
   --radius-input: 16px;
   --radius-tag: 40px;
-  
+
   /* Shadows */
   --shadow-card: 0 4px 24px rgba(18, 52, 55, 0.08);
   --shadow-hover: 0 8px 32px rgba(18, 52, 55, 0.12);
@@ -65,7 +65,12 @@ body {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 800;
   color: var(--color-text-primary);
 }
@@ -354,7 +359,8 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-white);
 }
 
-.card-dark h3, .card-dark h4 {
+.card-dark h3,
+.card-dark h4 {
   color: var(--color-text-white);
 }
 
@@ -504,19 +510,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 768px) {
-  .grid-2, .grid-3 {
+
+  .grid-2,
+  .grid-3 {
     grid-template-columns: 1fr;
   }
-  
+
   .header {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .hero h1 {
     font-size: 28px;
   }
-  
+
   .main-content {
     padding: 16px;
   }
@@ -676,6 +684,8 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-bg-light);
   border-radius: 24px;
   min-height: 360px;
+  max-width: 480px;
+  margin: 0 auto;
   overflow: hidden;
   border: 1px solid rgba(44, 43, 47, 0.1);
 }
@@ -798,24 +808,22 @@ h1, h2, h3, h4, h5, h6 {
 .history-card-prompt {
   font-size: 14px;
   line-height: 150%;
-  color: var(--color-text-secondary);
-  margin-bottom: 16px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
 }
 
 .history-card-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border-light);
 }
 
 .history-card-id {
+  font-family: 'SF Mono', monospace;
   font-size: 11px;
   color: var(--color-text-muted);
   font-family: 'SF Mono', 'Consolas', monospace;
@@ -864,8 +872,39 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @keyframes loading-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.85;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============ FOOTER ============ */
@@ -978,19 +1017,23 @@ h1, h2, h3, h4, h5, h6 {
 /* ============ SKELETON LOADING ============ */
 
 .skeleton {
-  background: linear-gradient(90deg, 
-    var(--color-bg-light) 25%, 
-    var(--color-bg-white) 50%, 
-    var(--color-bg-light) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--color-bg-light) 25%,
+      var(--color-bg-white) 50%,
+      var(--color-bg-light) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
   border-radius: 16px;
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ============ REGISTRATION FLOW ============ */
@@ -1023,9 +1066,17 @@ h1, h2, h3, h4, h5, h6 {
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.reg-progress-bar.step-1 { width: 33%; }
-.reg-progress-bar.step-2 { width: 66%; }
-.reg-progress-bar.step-3 { width: 100%; }
+.reg-progress-bar.step-1 {
+  width: 33%;
+}
+
+.reg-progress-bar.step-2 {
+  width: 66%;
+}
+
+.reg-progress-bar.step-3 {
+  width: 100%;
+}
 
 .reg-step-content {
   animation: slide-in 0.3s ease-out;
@@ -1042,8 +1093,547 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0;
     transform: translateX(10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+/* ============ MODAL ============ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(44, 43, 47, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-content {
+  background: var(--color-bg-white);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: var(--shadow-hover);
+  padding: 32px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: var(--color-text-primary);
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ LANDING PAGE SPECIFIC ============ */
+
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.landing-header {
+  border: none;
+  border-bottom: 1px solid var(--color-border-light);
+  border-radius: 0;
+  margin-top: 0;
+  max-width: 100%;
+  padding: 24px 40px;
+}
+
+.landing-hero {
+  background: var(--color-bg-white);
+  padding: 80px 40px;
+  border-radius: 0;
+  margin-bottom: 0;
+  min-height: 600px;
+}
+
+.landing-hero::before {
+  display: none;
+}
+
+.landing-hero-content {
+  max-width: 800px;
+}
+
+.landing-hero-content .hero-title {
+  color: var(--color-text-primary);
+  font-size: 56px;
+  line-height: 110%;
+  margin-bottom: 24px;
+}
+
+.landing-hero-content .hero-description {
+  color: var(--color-text-secondary);
+  font-size: 22px;
+  max-width: 800px;
+}
+
+.landing-bottom {
+  padding: 80px 40px;
+  background: var(--color-bg-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.landing-bottom-content {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.landing-bottom-content .section-title {
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: var(--color-text-primary);
+}
+
+.landing-bottom-content .section-subtitle {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+}
+
+
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  max-width: 1200px;
+}
+
+.chip-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--color-bg-light);
+  border: 1px dashed #C7C8C9;
+  border-radius: 24px;
+  min-width: 300px;
+}
+
+.chip-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.chip-color-0 {
+  background: #49A598;
+}
+
+.chip-color-1 {
+  background: #0062DA;
+}
+
+.chip-color-2 {
+  background: #8E48FF;
+}
+
+.chip-color-3 {
+  background: #FF9710;
+}
+
+.chip-text {
+  font-size: 16px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.landing-footer {
+  background: var(--color-bg-dark);
+  color: white;
+  padding: 48px 80px;
+  margin-top: auto;
+}
+
+.landing-footer .footer-content {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+/* Studio Header overrides */
+.studio-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.studio-main {
+  padding-top: 40px;
+}
+
+/* Studio Filter Row */
+.studio-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-bg-light);
+  padding: 12px 16px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.filter-input {
+  background: transparent;
+  border: none;
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  width: 60px;
+}
+
+.filter-input:focus {
+  outline: none;
+}
+
+/* ============ LANDING V2 ============ */
+
+.landing-hero-wrapper {
+  padding: 24px;
+  background: var(--color-bg-light);
+  display: flex;
+  justify-content: center;
+}
+
+.landing-hero-card {
+  background: var(--color-bg-white);
+  border-radius: 48px;
+  width: 100%;
+  max-width: 1200px;
+  min-height: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 24px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.hero-pill {
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 40px;
+  display: inline-block;
+  background: white;
+  z-index: 10;
+}
+
+.hero-visuals-container {
+  position: relative;
+  height: 350px;
+  width: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.hero-card-img {
+  position: absolute;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+.hero-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Specific Cards */
+.card-center {
+  width: 220px;
+  height: 300px;
+  z-index: 3;
+  transform: rotate(0deg);
+}
+
+.card-left {
+  width: 200px;
+  height: 280px;
+  z-index: 2;
+  transform: translateX(-140px) rotate(-8deg) translateY(10px);
+}
+
+.card-right {
+  width: 200px;
+  height: 280px;
+  z-index: 2;
+  transform: translateX(140px) rotate(8deg) translateY(10px);
+}
+
+.play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  border: 2px solid white;
+}
+
+.landing-hero-card .hero-title {
+  font-size: 48px;
+  line-height: 110%;
+  max-width: 700px;
+  margin-bottom: 24px;
+  color: var(--color-primary);
+}
+
+.landing-hero-card .hero-description {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  max-width: 600px;
+  margin-bottom: 0;
+}
+
+.btn-text {
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: 10px;
+}
+
+.btn-text:hover {
+  color: var(--color-accent);
+}
+
+
+/* ============ HEADER V2 (MATCHING FIGMA) ============ */
+
+/* Override existing header */
+.landing-header {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 40px;
+  height: 96px;
+  background: #FFFFFF;
+  border-bottom: 1px solid #EFEFEF;
+  border-radius: 0px;
+}
+
+.header-logo {
+  width: 125px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.header-logo-text {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2C2B2F;
+}
+
+.header-logo-text span {
+  color: #49A598;
+}
+
+.header-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0px;
+  gap: 16px;
+  height: 40px;
+}
+
+/* Language and Products Box Styles */
+.lang-switcher-box,
+.products-box {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0px 12px;
+  gap: 8px;
+  height: 40px;
+  background: #F6F6F6;
+  border-radius: 16px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  /* default */
+  font-family: 'Manrope', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  color: #2C2B2F;
+}
+
+.products-box {
+  border: 1px solid #49A598;
+  /* As per Products css */
+}
+
+/* Sign In Button */
+.btn-signin {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px 20px;
+  gap: 8px;
+  height: 40px;
+  background: #49A598;
+  border-radius: 40px;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-signin:hover {
+  background: #3a857a;
+}
+
+
+/* ============ HEADER REFINEMENTS V3 (EXACT MATCH) ============ */
+
+/* Ensure Language Switcher has NO border and correct BG */
+.lang-switcher div {
+  border: none !important;
+  background: #F6F6F6 !important;
+}
+
+/* Ensure Products has green border */
+.header-actions>div:nth-child(2) {
+  border: 1px solid #49A598 !important;
+  background: #FFFFFF !important;
+  background-color: #F6F6F6 !important;
+}
+
+/* Update default font for RU support if needed, though Manrope supports Cyrillic */
+body {
+  font-family: 'Manrope', sans-serif;
+}
+
+/* ============ USER FEEDBACK REFINEMENTS (STEP 337) ============ */
+
+/* 1. Header Logo Left, Rest Right - Reinforce */
+.landing-header {
+  justify-content: space-between !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+/* 2. Hero Cards - Remove "gray blocks" / frames */
+.hero-card-img {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  /* user said "without gray thing surrounding" */
+  border-radius: 20px !important;
+  /* Keep rounded corners for image */
+}
+
+.hero-card-img img {
+  border-radius: 20px !important;
+}
+
+/* 3. Bottom Chips - Align on same level (single row) */
+.chips-container {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  /* Allow scroll on small screens but keep row on large */
+  justify-content: space-between !important;
+  /* Spread them out or center? User said "on same level". space-between fills width */
+  width: 100% !important;
+  max-width: 100% !important;
+  /* Allow full width */
+  padding-bottom: 8px;
+  /* For scrollbar if needed */
+}
+
+.chip-card {
+  min-width: unset !important;
+  /* Allow shrinking */
+  flex: 1;
+  /* Distribute space evenly */
+  white-space: normal;
+  /* Allow text wrapping inside */
+}
+
+/* Ensure icons are correct size */
+.chip-icon-box img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }

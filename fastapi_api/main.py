@@ -4,6 +4,10 @@ import secrets
 import time
 from typing import Optional, Tuple
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+# Load .env from parent directory
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
 # n8n integration
 from n8n_user_service import create_or_get_n8n_user
@@ -670,23 +674,23 @@ def get_user_tasks(current_user: User = Depends(get_current_user), db=Depends(ge
 # PUBLIC media proxy (Solution A)
 # ----------------------------
 @app.get("/api/media/download/{key:path}")
-def download_media(key: str, format: str = "mp4"): # Default to mp4
+def download_media(key: str, format: str = None):
     """
-    Download media, converting to mp4 by default if needed.
-    Uses GIF intermediate for animated WebP since FFmpeg handles GIF better.
-    Also STRETCHES video to 3x duration if it's a generated video (short).
+    Download media files.
+    - For images (format=None or not mp4): serve original file
+    - For videos (format=mp4): convert animated WebP to MP4
     """
     require_env()
     s3 = s3_client()
     bucket = RUNPOD_VOLUME_ID
 
     tmp_in_path = None
-    tmp_gif_path = None
+    tmp_frames_dir = None
     tmp_out_path = None
     
     try:
         # 1. Download original file to temp
-        print(f"⬇️ Downloading {key} for conversion...")
+        print(f"⬇️ Downloading {key}...")
         obj = s3.get_object(Bucket=bucket, Key=key)
         original_ext = os.path.splitext(key)[1].lower()
         if not original_ext:
@@ -697,54 +701,101 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
                 tmp_in.write(chunk)
             tmp_in_path = tmp_in.name
 
-        # 2. Check if conversion/stretching needed
         final_path = tmp_in_path
         final_filename = os.path.basename(key)
         
-        # Always attempt conversion if target is mp4
+        # 2. Only convert to MP4 if explicitly requested
         if format == "mp4":
-            print(f"🔄 Converting/Stretching {key} to MP4...")
-            tmp_gif_path = tmp_in_path + ".gif"
+            print(f"🔄 Converting {key} to MP4...")
             tmp_out_path = tmp_in_path + ".mp4"
             
             try:
-                # For animated WebP, convert to GIF first using ImageMagick
-                use_gif_intermediate = False
                 is_webp = original_ext == ".webp"
+                conversion_success = False
                 
-                if is_webp and shutil.which("convert"):  # ImageMagick's convert
-                    try:
-                        gif_cmd = ["convert", tmp_in_path, tmp_gif_path]
-                        subprocess.run(gif_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
-                        use_gif_intermediate = True
-                        print(f"✅ Converted WebP to GIF intermediate")
-                    except Exception as gif_err:
-                        print(f"⚠️ GIF intermediate conversion failed, trying direct: {gif_err}")
-                        use_gif_intermediate = False
+                if is_webp:
+                    # For animated WebP, extract frames using webpmux or fallback methods
+                    tmp_frames_dir = tempfile.mkdtemp()
+                    
+                    # Method 1: Try using webpmux to extract frames
+                    if shutil.which("webpmux"):
+                        try:
+                            # First get frame count
+                            info_cmd = ["webpmux", "-info", tmp_in_path]
+                            info_result = subprocess.run(info_cmd, capture_output=True, text=True, timeout=30)
+                            
+                            # Extract each frame
+                            frame_files = []
+                            for i in range(1, 100):  # Max 100 frames
+                                frame_path = os.path.join(tmp_frames_dir, f"frame_{i:04d}.webp")
+                                extract_cmd = ["webpmux", "-get", "frame", str(i), tmp_in_path, "-o", frame_path]
+                                result = subprocess.run(extract_cmd, capture_output=True, timeout=10)
+                                if result.returncode == 0 and os.path.exists(frame_path):
+                                    frame_files.append(frame_path)
+                                else:
+                                    break
+                            
+                            if frame_files:
+                                # Convert frames to mp4 using ffmpeg
+                                frame_pattern = os.path.join(tmp_frames_dir, "frame_%04d.webp")
+                                cmd = [
+                                    "ffmpeg", "-y",
+                                    "-framerate", "8",
+                                    "-i", frame_pattern,
+                                    "-filter:v", "setpts=3.0*PTS,fps=24",
+                                    "-pix_fmt", "yuv420p",
+                                    "-c:v", "libx264",
+                                    "-preset", "fast",
+                                    "-movflags", "+faststart",
+                                    tmp_out_path
+                                ]
+                                subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+                                conversion_success = True
+                                print(f"✅ Converted {len(frame_files)} frames to MP4")
+                        except Exception as e:
+                            print(f"⚠️ webpmux method failed: {e}")
+                    
+                    # Method 2: Try ImageMagick convert
+                    if not conversion_success and shutil.which("convert"):
+                        try:
+                            # Extract frames using ImageMagick
+                            frame_pattern = os.path.join(tmp_frames_dir, "frame_%04d.png")
+                            convert_cmd = ["convert", "-coalesce", tmp_in_path, frame_pattern]
+                            subprocess.run(convert_cmd, check=True, capture_output=True, timeout=60)
+                            
+                            # Count extracted frames
+                            import glob
+                            frame_files = sorted(glob.glob(os.path.join(tmp_frames_dir, "frame_*.png")))
+                            
+                            if frame_files:
+                                cmd = [
+                                    "ffmpeg", "-y",
+                                    "-framerate", "8",
+                                    "-i", os.path.join(tmp_frames_dir, "frame_%04d.png"),
+                                    "-filter:v", "setpts=3.0*PTS,fps=24",
+                                    "-pix_fmt", "yuv420p",
+                                    "-c:v", "libx264",
+                                    "-preset", "fast",
+                                    "-movflags", "+faststart",
+                                    tmp_out_path
+                                ]
+                                subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+                                conversion_success = True
+                                print(f"✅ Converted {len(frame_files)} PNG frames to MP4")
+                        except Exception as e:
+                            print(f"⚠️ ImageMagick method failed: {e}")
+                    
+                    # Method 3: Serve original WebP if conversion fails
+                    if not conversion_success:
+                        print("⚠️ All conversion methods failed, serving original file")
+                        final_filename = os.path.splitext(final_filename)[0] + ".webp"
+                        # Don't raise, just serve original
                 
-                # Determine input file for FFmpeg
-                input_file = tmp_gif_path if use_gif_intermediate and os.path.exists(tmp_gif_path) else tmp_in_path
-                
-                # Build FFmpeg command based on input type
-                if use_gif_intermediate:
+                else:
+                    # Non-WebP video - direct ffmpeg conversion
                     cmd = [
                         "ffmpeg", "-y",
-                        "-ignore_loop", "0",
-                        "-i", input_file,
-                        "-t", "6",  # Limit to 6 seconds
-                        "-filter:v", "fps=24,setpts=3.0*PTS",  # Slow down 3x
-                        "-pix_fmt", "yuv420p",
-                        "-c:v", "libx264",
-                        "-preset", "fast",
-                        "-movflags", "+faststart",
-                        tmp_out_path
-                    ]
-                elif is_webp:
-                    # Direct WebP attempt (may fail for animated)
-                    cmd = [
-                        "ffmpeg", "-y",
-                        "-framerate", "8",
-                        "-i", input_file,
+                        "-i", tmp_in_path,
                         "-filter:v", "setpts=3.0*PTS",
                         "-pix_fmt", "yuv420p",
                         "-c:v", "libx264",
@@ -752,51 +803,36 @@ def download_media(key: str, format: str = "mp4"): # Default to mp4
                         "-movflags", "+faststart",
                         tmp_out_path
                     ]
-                else:
-                    # Non-WebP video/image
-                    cmd = [
-                        "ffmpeg", "-y",
-                        "-i", input_file,
-                        "-filter:v", "setpts=3.0*PTS", 
-                        "-pix_fmt", "yuv420p",
-                        "-c:v", "libx264",
-                        "-preset", "fast",
-                        "-movflags", "+faststart",
-                        tmp_out_path
-                    ]
+                    subprocess.run(cmd, check=True, capture_output=True, timeout=120)
+                    conversion_success = True
                 
-                # Run with captured output for debugging
-                process = subprocess.run(
-                    cmd, 
-                    check=True, 
-                    stdout=subprocess.PIPE, 
-                    stderr=subprocess.PIPE,
-                    timeout=120
-                )
-                
-                final_path = tmp_out_path
-                final_filename = os.path.splitext(final_filename)[0] + ".mp4"
-                print(f"✅ Conversion successful: {final_path}")
-                
+                if conversion_success and os.path.exists(tmp_out_path):
+                    final_path = tmp_out_path
+                    final_filename = os.path.splitext(final_filename)[0] + ".mp4"
+                    
             except subprocess.CalledProcessError as e:
                 err_msg = e.stderr.decode() if e.stderr else str(e)
                 print(f"❌ FFmpeg conversion failed: {err_msg}")
-                # Enforce strict MP4 requirement
-                raise HTTPException(500, f"Video processing/conversion failed: {err_msg}")
+                # Fallback to original file instead of error
+                print("⚠️ Serving original file as fallback")
             except FileNotFoundError:
-                print("❌ FFmpeg not found on server.")
-                raise HTTPException(500, "Server Error: ffmpeg tools missing for video conversion.")
+                print("❌ FFmpeg not found, serving original file")
 
         # 3. Serve file
         from starlette.background import BackgroundTask
         
         def cleanup():
-            for path in [tmp_in_path, tmp_gif_path, tmp_out_path]:
+            for path in [tmp_in_path, tmp_out_path]:
                 if path and os.path.exists(path):
                     try:
                         os.unlink(path)
                     except:
                         pass
+            if tmp_frames_dir and os.path.exists(tmp_frames_dir):
+                try:
+                    shutil.rmtree(tmp_frames_dir)
+                except:
+                    pass
 
         return FileResponse(
             final_path, 
