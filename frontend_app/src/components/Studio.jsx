@@ -330,7 +330,7 @@ export default function Studio({ token, t, lang, setLang, handleLogout }) {
                             position: 'relative'
                         }}
                     >
-                        <span style={{ fontFamily: 'Manrope', fontWeight: 500, fontSize: '14px', color: '#2C2B2F' }}>Продукты</span>
+                        <span style={{ fontFamily: 'Manrope', fontWeight: 500, fontSize: '14px', color: '#2C2B2F' }}>{t.products}</span>
                         <span style={{ fontSize: '10px' }}>{productsMenuOpen ? '▲' : '▼'}</span>
 
                         {productsMenuOpen && (

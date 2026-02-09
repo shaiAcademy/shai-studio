@@ -11,6 +11,7 @@ export const translations = {
         n8nError: "Failed to redirect to n8n",
         loginN8n: "Login to n8n",
         loginDify: "Login to Dify",
+        products: "Products",
 
         // Hero
         heroTitle: "Craft production-grade visuals with AI",
@@ -90,6 +91,7 @@ export const translations = {
         n8nError: "Не удалось перейти в n8n",
         loginN8n: "Войти в n8n",
         loginDify: "Войти в Dify",
+        products: "Продукты",
 
         // Hero
         heroTitle: "Создавайте визуальный контент с помощью ИИ",
@@ -169,6 +171,7 @@ export const translations = {
         n8nError: "n8n-ге өту мүмкін болмады",
         loginN8n: "n8n-ге кіру",
         loginDify: "Dify-ға кіру",
+        products: "Өнімдер",
 
         // Hero
         heroTitle: "AI көмегімен визуалды контент жасаңыз",
