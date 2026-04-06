@@ -1,151 +1,127 @@
 """
-n8n User Service Module
+n8n_user_service.py — создание/поиск пользователей в SQLite базе n8n.
 
-Provides functionality to create and manage users in n8n's SQLite database.
-This enables SSO-like functionality from studio.shai.academy to n8n.shai.academy.
+Обеспечивает SSO-подобное поведение: пользователи studio.shai.academy
+автоматически создаются в n8n.shai.academy.
 """
-
 import os
-import sqlite3
 import secrets
+import sqlite3
 from datetime import datetime
 from typing import Optional
 
 import bcrypt
 
-# Path to n8n SQLite database
-N8N_DB_PATH = os.getenv("N8N_DB_PATH", "/var/lib/docker/volumes/n8n_n8n_data/_data/database.sqlite")
+# Путь к SQLite базе n8n (монтируется через docker volume)
+N8N_DB_PATH: str = os.getenv(
+    "N8N_DB_PATH",
+    "/var/lib/docker/volumes/n8n_n8n_data/_data/database.sqlite",
+)
 
 
 def create_or_get_n8n_user(email: str, first_name: str = "") -> dict:
     """
-    Create a new user in n8n database or return existing user info.
-    
-    Args:
-        email: User's email address
-        first_name: User's first name (optional, defaults to email prefix)
-    
+    Создаёт пользователя в БД n8n или возвращает существующего.
+
     Returns:
-        dict with keys: userId, email, firstName, globalRole, exists
-    
+        dict: {userId, email, firstName, globalRole, exists}
+
     Raises:
-        Exception if database is not accessible
+        FileNotFoundError: если база n8n недоступна
+        Exception: при ошибке БД
     """
-    
-    # Check if the database file exists
     if not os.path.exists(N8N_DB_PATH):
         raise FileNotFoundError(f"n8n database not found at {N8N_DB_PATH}")
-    
-    conn = sqlite3.connect(N8N_DB_PATH)
-    cursor = conn.cursor()
-    
-    try:
-        # Check if user already exists
+
+    with sqlite3.connect(N8N_DB_PATH) as conn:
+        cursor = conn.cursor()
+
+        # Проверяем существование пользователя
         cursor.execute(
             'SELECT id, email, firstName FROM "user" WHERE email = ?',
-            (email,)
+            (email,),
         )
         row = cursor.fetchone()
-        
+
         if row:
             return {
                 "userId": row[0],
                 "email": row[1],
                 "firstName": row[2] or "",
                 "globalRole": "global:member",
-                "exists": True
+                "exists": True,
             }
-        
-        # Create new user
+
+        # Создаём нового пользователя
         user_id = secrets.token_hex(16)
         api_key = secrets.token_hex(20)
-        
-        # Generate random password and hash it with bcrypt
+
+        # Генерируем случайный пароль (пользователь входит через SSO, не через пароль)
         random_password = secrets.token_hex(32)
         hashed_password = bcrypt.hashpw(
-            random_password.encode('utf-8'),
-            bcrypt.gensalt()
-        ).decode('utf-8')
-        
-        # Use email prefix as first name if not provided
-        user_first_name = first_name or email.split('@')[0]
-        
+            random_password.encode("utf-8"),
+            bcrypt.gensalt(),
+        ).decode("utf-8")
+
+        user_first_name = first_name or email.split("@")[0]
         now = datetime.utcnow().isoformat()
-        
-        cursor.execute('''
-            INSERT INTO "user" (
-                id, email, firstName, lastName, password, 
-                apiKey, 
-                personalizationAnswers, settings,
-                createdAt, updatedAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            user_id,
-            email,
-            user_first_name,
-            '',  # lastName
-            hashed_password,
-            api_key,
-            '{}',  # personalizationAnswers
-            None,  # settings
-            now,
-            now
-        ))
-        
-        conn.commit()
-        
-        print(f"✅ Created n8n user: {email} (id: {user_id})")
-        
-        return {
-            "userId": user_id,
-            "email": email,
-            "firstName": user_first_name,
-            "role": "global:member",
-            "exists": False
-        }
-        
-    except sqlite3.Error as e:
-        conn.rollback()
-        print(f"❌ SQLite error creating n8n user: {e}")
-        raise Exception(f"Database error: {e}")
-        
-    finally:
-        conn.close()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO "user" (
+                    id, email, firstName, lastName, password,
+                    apiKey,
+                    personalizationAnswers, settings,
+                    createdAt, updatedAt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    user_id, email, user_first_name, "",
+                    hashed_password, api_key,
+                    "{}", None,
+                    now, now,
+                ),
+            )
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            print(f"❌ SQLite error creating n8n user: {e}")
+            raise Exception(f"Database error: {e}") from e
+
+    print(f"✅ Created n8n user: {email} (id: {user_id})")
+    return {
+        "userId": user_id,
+        "email": email,
+        "firstName": user_first_name,
+        "globalRole": "global:member",
+        "exists": False,
+    }
 
 
 def get_n8n_user_by_email(email: str) -> Optional[dict]:
     """
-    Get n8n user by email address.
-    
-    Args:
-        email: User's email address
-    
+    Ищет пользователя n8n по email.
+
     Returns:
-        dict with user info or None if not found
+        dict с данными пользователя или None если не найден.
     """
-    
     if not os.path.exists(N8N_DB_PATH):
         return None
-    
-    conn = sqlite3.connect(N8N_DB_PATH)
-    cursor = conn.cursor()
-    
-    try:
+
+    with sqlite3.connect(N8N_DB_PATH) as conn:
+        cursor = conn.cursor()
         cursor.execute(
             'SELECT id, email, firstName FROM "user" WHERE email = ?',
-            (email,)
+            (email,),
         )
         row = cursor.fetchone()
-        
-        if row:
-            return {
-                "userId": row[0],
-                "email": row[1],
-                "firstName": row[2] or "",
-                "globalRole": "global:member"
-            }
-        
-        return None
-        
-    finally:
-        conn.close()
+
+    if row:
+        return {
+            "userId": row[0],
+            "email": row[1],
+            "firstName": row[2] or "",
+            "globalRole": "global:member",
+        }
+    return None

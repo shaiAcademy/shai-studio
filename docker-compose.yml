@@ -10,8 +10,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /home/almas_b/n8n/n8n_data/database.sqlite:/var/lib/docker/volumes/n8n_n8n_data/_data/database.sqlite:ro
-        
+
     networks:
       default:
         aliases:

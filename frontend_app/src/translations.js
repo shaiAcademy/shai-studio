@@ -72,6 +72,10 @@ export const translations = {
         // Footer
         footerText: "Crafted for product teams",
 
+        // Chips section
+        chipsTitle: "Not sure where to start?",
+        chipsSubtitle: "Try one of the options below",
+
         // Quick prompts
         quickPrompts: [
             "Cinematic portrait of an astronaut in neon city",
@@ -152,6 +156,10 @@ export const translations = {
         // Footer
         footerText: "Создано для продуктовых команд",
 
+        // Chips section
+        chipsTitle: "Не знаете, с чего начать?",
+        chipsSubtitle: "Попробуйте один из вариантов ниже",
+
         // Quick prompts
         quickPrompts: [
             "Кинематографичный портрет астронавта в неоновом городе",
@@ -160,6 +168,7 @@ export const translations = {
             "Атмосферный пейзаж, туманные горы на рассвете",
         ],
     },
+
     kz: {
         // Header
         signedIn: "Кірген",
@@ -232,6 +241,10 @@ export const translations = {
         // Footer
         footerText: "Өнім топтары үшін жасалған",
 
+        // Chips section
+        chipsTitle: "Бастауды білмейсіз бе?",
+        chipsSubtitle: "Төмендегі нұсқалардың бірін қолданыңыз",
+
         // Quick prompts
         quickPrompts: [
             "Неон қаласындағы ғарышкердің кинематографиялық портреті",
@@ -240,4 +253,5 @@ export const translations = {
             "Таңғы тау шыңдарының тұманды пейзажы",
         ],
     },
+
 };

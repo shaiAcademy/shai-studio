@@ -9,7 +9,7 @@ import axios from "axios";
  * Если хочешь напрямую указывать бек:
  * VITE_API_BASE="http://localhost:8000/api"
  */
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
 export const login = async (username, password) => {
   const res = await axios.post(`${API_BASE}/auth/login`, {
@@ -48,6 +48,13 @@ export const generateVideo = async ({ prompt, steps = 30, token }) => {
 
 export const getRunpodStatus = async ({ taskId, token }) => {
   const res = await axios.get(`${API_BASE}/generate/status/${taskId}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  return res.data;
+};
+
+export const apiGetTasks = async (token) => {
+  const res = await axios.get(`${API_BASE}/tasks`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   return res.data;
