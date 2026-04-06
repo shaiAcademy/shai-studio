@@ -67,7 +67,7 @@ services:
     depends_on:
       - fastapi_api
     ports:
-      - "3000:80"
+      - "3002:80"
     networks:
       default:
         aliases:
