@@ -10,19 +10,26 @@
 
 ## Быстрый старт
 
-1. Создайте файл `.env` в корне проекта и добавьте URL вашего ComfyUI на RunPod и JWT секрет:
+1. Создайте локальный `.env` в корне проекта:
 ```bash
-RUNPOD_COMFY_URL=https://your-pod-id.runpod.net
-JWT_SECRET=change-me
-JWT_EXPIRE_MINUTES=60
+cat > .env << 'EOF'
+POSTGRES_USER=shai
+POSTGRES_PASSWORD=change-me-strong-password
+POSTGRES_DB=shai_db
+DATABASE_URL=postgresql+psycopg2://shai:change-me-strong-password@postgres:5432/shai_db
+JWT_SECRET=change-me-long-random-secret
+JWT_EXPIRES_MIN=43200
+EOF
 ```
 
-2. Запустите все сервисы:
+2. Заполните переменные в `.env` (минимум `POSTGRES_PASSWORD`, `DATABASE_URL`, `JWT_SECRET`).
+
+3. Запустите все сервисы:
 ```bash
 docker-compose up --build
 ```
 
-2. Откройте в браузере:
+4. Откройте в браузере:
 - **Фронтенд**: http://localhost или http://localhost:3000 (оба варианта работают)
 - **API Swagger**: http://localhost:8000/docs
 
@@ -40,27 +47,29 @@ docker-compose up --build
 - **Host**: localhost
 - **Port**: 5432
 - **Database**: shai_db
-- **User**: shai
-- **Password**: shai
+- **User**: значение `POSTGRES_USER` из `.env`
+- **Password**: значение `POSTGRES_PASSWORD` из `.env`
 
 Таблица `tasks` создаётся автоматически при первом запуске.
 
 ## Настройка переменных окружения
 
-Для работы генерации изображений необходимо настроить переменную окружения `RUNPOD_COMFY_URL`:
+Для запуска создайте `.env` и заполните необходимые переменные:
 
-1. **Для Docker Compose**: Создайте файл `.env` в корне проекта:
+1. **Для Docker Compose**:
    ```
-   RUNPOD_COMFY_URL=https://your-pod-id.runpod.net
-   JWT_SECRET=change-me
-   JWT_EXPIRE_MINUTES=60
+   POSTGRES_USER=shai
+   POSTGRES_PASSWORD=<strong-password>
+   POSTGRES_DB=shai_db
+   DATABASE_URL=postgresql+psycopg2://shai:<strong-password>@postgres:5432/shai_db
+   JWT_SECRET=<long-random-secret>
    ```
 
-2. **Для локальной разработки**: Создайте файл `.env` в папке `fastapi_api/`:
+2. **Для локальной разработки** (если запускаете FastAPI не через Compose): можно также положить `.env` в `fastapi_api/`.
    ```
-   RUNPOD_COMFY_URL=https://your-pod-id.runpod.net
-   JWT_SECRET=change-me
-   JWT_EXPIRE_MINUTES=60
+   # Минимум:
+   JWT_SECRET=change-me-long-random-secret
+   DATABASE_URL=postgresql+psycopg2://shai:<password>@localhost:5432/shai_db
    ```
 
 ## API Endpoints

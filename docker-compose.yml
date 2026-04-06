@@ -3,9 +3,9 @@ services:
     image: postgres:15-alpine
     container_name: postgres
     environment:
-      POSTGRES_USER: shai
-      POSTGRES_PASSWORD: shai
-      POSTGRES_DB: shai_db
+      POSTGRES_USER: ${POSTGRES_USER:-shai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-shai_db}
     ports:
       - "5432:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
         aliases:
           - postgres
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U shai -d shai_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shai} -d ${POSTGRES_DB:-shai_db}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -29,7 +29,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg2://shai:shai@postgres:5432/shai_db
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       N8N_DB_PATH: /n8n_db/database.sqlite
 
       # RunPod Serverless
@@ -44,7 +44,7 @@ services:
       RUNPOD_VOLUME_ID: ${RUNPOD_VOLUME_ID}
       PRESIGN_EXPIRES_SEC: ${PRESIGN_EXPIRES_SEC:-86400}
 
-      JWT_SECRET: ${JWT_SECRET:-change-me-please}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN:-43200}
     volumes:
       - ./fastapi_api:/app

@@ -4,8 +4,12 @@ config.py — все конфигурационные переменные из 
 import os
 from dotenv import load_dotenv
 
-# Загружаем .env из корня проекта (родительская папка fastapi_api)
-load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+_FASTAPI_DIR = os.path.dirname(os.path.dirname(__file__))
+_PROJECT_ROOT = os.path.dirname(_FASTAPI_DIR)
+
+# Пытаемся загрузить .env сначала из корня проекта, затем из fastapi_api/.
+load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
+load_dotenv(os.path.join(_FASTAPI_DIR, ".env"))
 
 
 # ── RunPod ────────────────────────────────────────────────────────────────────
@@ -26,7 +30,7 @@ RUNPOD_VOLUME_ID: str = os.getenv("RUNPOD_VOLUME_ID", "")  # bucket = Volume ID
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 
 # ── JWT ─────────────────────────────────────────────────────────────────────
-JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-please")
+JWT_SECRET: str = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRES_MIN", os.getenv("JWT_EXPIRE_MINUTES", "60")))
 
